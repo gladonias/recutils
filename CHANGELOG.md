@@ -102,3 +102,49 @@ For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
   failure was silently ignored (result overwritten by unconditional
   `res = true`).
   (rec-sex-lex.l)
+
+- Fix `recsel` failing to match multi-value fields when `#Field`
+  co-occurs with `Field` in a selection expression (e.g.
+  `#Field > 1 && Field = 'x'`). The evaluator now uses AST node
+  fixing to bind each field value in turn while preserving the
+  original record for `#Field` counting.
+  [Savannah #62992](https://savannah.gnu.org/bugs/?62992)
+
+- Fix signed/unsigned comparison bug in `rec_buf_rewind`: the guard
+  `(buf->used - n) >= 0` was always true for `size_t`, allowing
+  underflow on negative `n`.
+  (rec-buf.c)
+
+- Replace `exit(EXIT_FAILURE)` calls in library code with proper
+  error returns. A shared library must never terminate the calling
+  process. Affected: `rec_sex_eval_node` (REC_SEX_NOVAL case) and
+  `rec_type_new` (REC_TYPE_NONE case).
+  (rec-sex.c, rec-types.c)
+
+- Add NULL-check error propagation for `strdup` return values in
+  `rec_sex_ast_node_set_str`, `rec_sex_ast_node_set_name`,
+  `rec_sex_ast_node_fix`, and `rec_sex_ast_fix_name`. These functions
+  now return `bool` and propagate allocation failures to callers.
+  Callers in the lexer and evaluator updated to handle failures.
+  (rec-sex-ast.c, rec-sex-ast.h, rec-sex-lex.l, rec-sex.c)
+
+- Fix `rec_comment_set_text` to check `strdup` return and avoid
+  freeing the original comment on allocation failure. Now returns
+  `bool`.
+  (rec-comment.c, rec.h)
+
+- Fix memory leak in `rec_write_comment`: early returns inside the
+  `strsep` loop skipped `free(orig_str)`. Also added NULL check for
+  the initial `strdup`.
+  (rec-writer.c)
+
+### Known Issues
+
+- **Weak key derivation in `rec-crypt.c`**: The AES-128 encryption
+  uses a naive key derivation (password bytes cycled to fill the key)
+  and only 4 of 16 IV bytes are random. This provides inadequate
+  key stretching and reduced IV entropy. Fixing this requires a
+  versioned ciphertext format with backward-compatible decryption,
+  which is deferred to a future release. Users with strong
+  confidentiality requirements should use external encryption tools
+  (e.g. GPG) rather than relying on the built-in field encryption.
