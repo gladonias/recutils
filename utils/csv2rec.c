@@ -195,8 +195,14 @@ field_cb (void *s, size_t len, void *data)
       /* Add a new field name to ctx.field_names.  */
 
       if ((ctx->num_field_names % ALLOC_FIELDS) == 0)
-        ctx->field_names =
-          realloc (ctx->field_names, ((ctx->num_field_names / ALLOC_FIELDS) + 1) * (sizeof(char *) * ALLOC_FIELDS));
+        {
+          char **tmp = realloc (ctx->field_names,
+                                ((ctx->num_field_names / ALLOC_FIELDS) + 1)
+                                * (sizeof(char *) * ALLOC_FIELDS));
+          if (!tmp)
+            recutl_out_of_memory ();
+          ctx->field_names = tmp;
+        }
 
       /* Normalize the name: spaces and tabs are turned into dashes
          '_'.  */

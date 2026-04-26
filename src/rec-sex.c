@@ -978,10 +978,12 @@ rec_sex_eval_str (rec_sex_t sex,
   switch (val.type)
     {
     case REC_SEX_VAL_INT:
-      asprintf (&res, "%d", val.int_val);
+      if (asprintf (&res, "%d", val.int_val) == -1)
+        res = NULL;
       break;
     case REC_SEX_VAL_REAL:
-      asprintf (&res, "%f", val.real_val);
+      if (asprintf (&res, "%f", val.real_val) == -1)
+        res = NULL;
       break;
     case REC_SEX_VAL_STR:
       res = strdup (val.str_val);

@@ -234,11 +234,8 @@ rec_aggregate_std_count (rec_rset_t rset,
       rec_mset_iterator_free (&iter);
     }
 
-  /* Return the count as a string.  Note that if NULL is returned it
-     will be returned by this function below to signal the
-     end-of-memory condition.  */
-      
-  asprintf (&result, "%zu", count);
+  if (asprintf (&result, "%zu", count) == -1)
+    result = NULL;
   return result;
 }
 
@@ -269,11 +266,8 @@ rec_aggregate_std_avg (rec_rset_t rset,
         avg = avg / num_records;
     }
 
-  /* Return the average as a string.  Note that if NULL is returned it
-     will be returned by this function below to signal the
-     end-of-memory condition.  */
-  asprintf (&result, "%g", avg);
-
+  if (asprintf (&result, "%g", avg) == -1)
+    result = NULL;
   return result;
 }
 
@@ -326,11 +320,8 @@ rec_aggregate_std_avg_record (rec_record_t record,
         rec_mset_iterator_free (&iter);                                 \
       }                                                                 \
                                                                         \
-    /* Return the val as a string.  Note that if NULL is returned it */ \
-    /* will be returned by this function below to signal the */         \
-    /* end-of-memory condition.  */                                     \
-    asprintf (&result, "%g", val);                                      \
-                                                                        \
+    if (asprintf (&result, "%g", val) == -1)                            \
+      result = NULL;                                                    \
     return result;                                                      \
   }                                                                     \
                                                                         \

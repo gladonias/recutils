@@ -159,8 +159,11 @@ rec2csv_generate_csv (rec_rset_t rset,
 
       /* The header is FNAME or FNAME_N where N is the index starting
          at 1.  Note that we shall remove the trailing ':', if any. */
-      if (field_name[strlen(field_name)-1] == ':')
-        field_name[strlen(field_name)-1] = '\0';
+      {
+        size_t len = strlen (field_name);
+        if (len > 0 && field_name[len - 1] == ':')
+          field_name[len - 1] = '\0';
+      }
 
 
       if (rec_fex_elem_min (fex_elem) != 0)

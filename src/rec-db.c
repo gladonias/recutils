@@ -44,6 +44,7 @@ rec_db_merge_records (rec_record_t record1,
   rec_mset_iterator_t iter;
   rec_field_t field;
   rec_record_t merge = NULL;
+  bool ok = true;
 
   merge = rec_record_dup (record1);
   if (!merge)
@@ -58,24 +59,33 @@ rec_db_merge_records (rec_record_t record1,
     {
       rec_field_t new_field = rec_field_dup (field);
       if (!new_field)
-        /* Out of memory.  */
-        return NULL;
+        {
+          ok = false;
+          break;
+        }
 
       /* Apply the prefix.  */
       {
         const char *field_name = rec_field_name (new_field);
         char *new_name = malloc (strlen (field_name) + strlen(prefix) + 2);
         if (!new_name)
-          /* Out of memory.  */
-          return NULL;
+          {
+            rec_field_destroy (new_field);
+            ok = false;
+            break;
+          }
 
         memcpy (new_name, prefix, strlen (prefix));
         new_name[strlen (prefix)] = '_';
         memcpy (new_name + strlen (prefix) + 1, field_name, strlen (field_name) + 1);
 
         if (!rec_field_set_name (new_field, new_name))
-          /* Out of memory.  */
-          return NULL;
+          {
+            free (new_name);
+            rec_field_destroy (new_field);
+            ok = false;
+            break;
+          }
 
         free (new_name);
       }
@@ -84,10 +94,19 @@ rec_db_merge_records (rec_record_t record1,
                             MSET_FIELD,
                             (void *) new_field,
                             MSET_ANY))
-        /* Out of memory.  */
-        return NULL;
+        {
+          rec_field_destroy (new_field);
+          ok = false;
+          break;
+        }
     }
   rec_mset_iterator_free (&iter);
+
+  if (!ok)
+    {
+      rec_record_destroy (merge);
+      return NULL;
+    }
 
   return merge;
 }
@@ -132,15 +151,16 @@ rec_db_join (rec_db_t db,
     }
   else
     {
+      bool ok = true;
       rec_record_t record1 = NULL;
       rec_mset_iterator_t iter1 = rec_mset_iterator (rec_rset_mset (rset1));
-      while (rec_mset_iterator_next (&iter1, MSET_RECORD, (const void **) &record1, NULL))
+      while (ok && rec_mset_iterator_next (&iter1, MSET_RECORD, (const void **) &record1, NULL))
         {
           size_t num_foreign_keys = rec_record_get_num_fields_by_name (record1, field);
           size_t num_foreign_key = 0;
           bool matched_any = false;
 
-          for (num_foreign_key = 0; num_foreign_key < num_foreign_keys; num_foreign_key++)
+          for (num_foreign_key = 0; ok && num_foreign_key < num_foreign_keys; num_foreign_key++)
             {
               rec_record_t record2 = NULL;
               rec_mset_iterator_t iter2 = rec_mset_iterator (rec_rset_mset (rset2));
@@ -172,33 +192,39 @@ rec_db_join (rec_db_t db,
 
                   rec_record_t record = rec_db_merge_records (record1, record2, field);
                   if (!record)
-                    return NULL;
+                    { ok = false; break; }
 
                   while (rec_record_get_num_fields_by_name (record, field) > 0)
                     rec_record_remove_field_by_name (record, field, 0);
 
                   rec_record_set_container (record, join);
                   if (!rec_mset_append (rec_rset_mset (join), MSET_RECORD, (void *) record, MSET_ANY))
-                    return NULL;
+                    { rec_record_destroy (record); ok = false; break; }
                 }
               rec_mset_iterator_free (&iter2);
             }
 
-          if (left_join && !matched_any)
+          if (ok && left_join && !matched_any)
             {
               rec_record_t record = rec_record_dup (record1);
               if (!record)
-                return NULL;
+                { ok = false; continue; }
 
               while (rec_record_get_num_fields_by_name (record, field) > 0)
                 rec_record_remove_field_by_name (record, field, 0);
 
               rec_record_set_container (record, join);
               if (!rec_mset_append (rec_rset_mset (join), MSET_RECORD, (void *) record, MSET_ANY))
-                return NULL;
+                { rec_record_destroy (record); ok = false; continue; }
             }
         }
       rec_mset_iterator_free (&iter1);
+
+      if (!ok)
+        {
+          rec_rset_destroy (join);
+          return NULL;
+        }
     }
 
   /* The descriptor of the new record set will define records of type
@@ -209,8 +235,10 @@ rec_db_join (rec_db_t db,
   {
     rec_record_t new_descriptor = rec_record_new ();
     if (!new_descriptor)
-      /* Out of memory.  */
-      return NULL;
+      {
+        rec_rset_destroy (join);
+        return NULL;
+      }
 
     /* Set the type of the joined record set.  */
 
@@ -218,8 +246,11 @@ rec_db_join (rec_db_t db,
       rec_field_t new_field = NULL;
       char *new_rset_type = rec_concat_strings (type1, "_", field);
       if (!new_rset_type)
-        /* Out of memory.  */
-        return NULL;
+        {
+          rec_record_destroy (new_descriptor);
+          rec_rset_destroy (join);
+          return NULL;
+        }
 
       new_field = rec_field_new (rec_std_field_name (REC_FIELD_REC),
                                  new_rset_type);
@@ -227,8 +258,11 @@ rec_db_join (rec_db_t db,
                             MSET_FIELD,
                             (void *) new_field,
                             MSET_ANY))
-        /* Out of memory.  */
-        return NULL;
+        {
+          rec_record_destroy (new_descriptor);
+          rec_rset_destroy (join);
+          return NULL;
+        }
     }
 
     rec_rset_set_descriptor (join, new_descriptor);

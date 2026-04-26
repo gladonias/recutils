@@ -537,7 +537,8 @@ rec_record_set_location (rec_record_t record,
       record->location_str = NULL;
     }
 
-  asprintf (&(record->location_str), "%zu", record->location);
+  if (asprintf (&(record->location_str), "%zu", record->location) == -1)
+    record->location_str = NULL;
 }
 
 size_t
@@ -569,7 +570,8 @@ rec_record_set_char_location (rec_record_t record,
       record->char_location_str = NULL;
     }
 
-  asprintf (&(record->char_location_str), "%zu", record->char_location);
+  if (asprintf (&(record->char_location_str), "%zu", record->char_location) == -1)
+    record->char_location_str = NULL;
 }
 
 bool
