@@ -319,7 +319,7 @@ recutl_build_db (int argc, char **argv)
             {
               if (!recutl_parse_db_from_file (in, file_name, db))
                 {
-                  free (db);
+                  rec_db_destroy (db);
                   db = NULL;
                 }
 
@@ -331,7 +331,7 @@ recutl_build_db (int argc, char **argv)
     {
       if (!recutl_parse_db_from_file (stdin, "stdin", db))
         {
-          free (db);
+          rec_db_destroy (db);
           db = NULL;
         }
     }

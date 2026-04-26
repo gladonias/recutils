@@ -1360,8 +1360,8 @@ rec_db_delete (rec_db_t     db,
   if (!type && !rset && (rec_db_size (db) == 1))
     rset = rec_db_get_rset (db, 0);
 
-  /* Don't process empty record sets.  */
-  if (rec_rset_num_records (rset) == 0)
+  /* Don't process empty or missing record sets.  */
+  if (!rset || rec_rset_num_records (rset) == 0)
     return true;
 
   /* If the user requested to delete random records then calculate

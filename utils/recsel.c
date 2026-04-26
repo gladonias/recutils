@@ -413,7 +413,7 @@ recsel_process_data (rec_db_t db)
 
   if (recsel_count)
     /* Write the number of matching records.  */
-    fprintf (stdout, "%d\n", rec_rset_num_records (rset));
+    fprintf (stdout, "%zu\n", rec_rset_num_records (rset));
   else
     {
       /* Write the resulting record set to the standard output.  */
