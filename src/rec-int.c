@@ -725,11 +725,11 @@ does not exist\n"),
                     }
                   else
                     {
-                      /* XXX: make rec_type_descr_p to report more details.  */
                       ADD_ERROR (errors,
-                                _("%s:%s: error: invalid type specification\n"),
+                                _("%s:%s: error: invalid type specification '%s'\n"),
                                 rec_field_source (field),
-                                rec_field_location_str (field));
+                                rec_field_location_str (field),
+                                p);
                       res++;
                     }
                 }
@@ -778,11 +778,11 @@ does not exist\n"),
                     }
                   else
                     {
-                      /* XXX: make rec_type_descr_p to report more details.  */
                       ADD_ERROR (errors,
-                                _("%s:%s: error: invalid typedef specification\n"),
+                                _("%s:%s: error: invalid typedef specification '%s'\n"),
                                 rec_field_source (field),
-                                rec_field_location_str (field));
+                                rec_field_location_str (field),
+                                p);
                       res++;
                     }
                 }
