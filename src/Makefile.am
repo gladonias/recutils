@@ -159,7 +159,7 @@ endif
 
 if REMOTE_DESCRIPTORS
   AM_CPPFLAGS += -DREMOTE_DESCRIPTORS
-  librec_la_LIBADD += $(CURLLIBS)
+  librec_la_LIBADD += $(CURL_LIBS)
 endif
 
 if UUID_TYPE
