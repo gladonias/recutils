@@ -80,7 +80,10 @@ rec_mset_elem_destroy (rec_mset_elem_t elem)
          function was configured by the user.  The callback is never
          invoked if the stored data is NULL.  */
       if (elem->data && elem->mset->disp_fn[elem->type])
-        elem->mset->disp_fn[elem->type] (elem->data);
+        {
+          elem->mset->disp_fn[elem->type] (elem->data);
+          elem->data = NULL;
+        }
 
       free (elem);
     }
