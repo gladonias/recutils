@@ -145,6 +145,7 @@ STRING             '([^']|\\(.|\n))*'|\"([^"]|\\(.|\n))*\"
   rec_sex_ast_node_set_index (yylval->node, index);
   res = REC_SEX_TOK_NAM;
 
+  free (subname);
   free (name);
   free (match);
 
@@ -218,9 +219,6 @@ rec_sex_lex_extract_index (char *str,
   char aux[100];
   int aux_size;
 
-  /* Note that this function assumes syntax correctness in STR if a
-     '[' is found.  */
-
   aux_size = 0;
   p = str;
   while ((*p != 0) && (*p != '['))
@@ -231,17 +229,20 @@ rec_sex_lex_extract_index (char *str,
   else
     {
       p++; /* Pass the [.  */
-      while (*p != ']')
+      while (*p != ']' && *p != '\0')
         {
+          if (aux_size >= (int) sizeof (aux) - 1)
+            return false;
           aux[aux_size++] = *p;
           p++;
         }
+
+      if (*p != ']')
+        return false;
+
       aux[aux_size] = 0;
 
-      if (!rec_atoi (aux, num))
-        res = false;
-
-      res = true;
+      res = rec_atoi (aux, num);
     }
 
   return res;
