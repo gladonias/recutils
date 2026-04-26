@@ -1475,6 +1475,7 @@ rec_aggregate_reg_t rec_db_aggregates (rec_db_t db);
 #define REC_F_DESCRIPTOR 1
 #define REC_F_ICASE      2
 #define REC_F_UNIQ       4
+#define REC_F_LEFT_JOIN  8
 
 #define REC_Q_NOINDEX ((size_t)-1)
 

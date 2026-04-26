@@ -49,6 +49,7 @@ char      *recsel_password     = NULL;
 bool       recsel_uniq         = false;
 size_t     recutl_random       = 0;
 char      *recsel_join         = NULL;
+bool       recsel_left_join    = false;
 
 /*
  * Command line options management.
@@ -71,7 +72,8 @@ enum
 #endif
   UNIQ_ARG,
   GROUP_BY_ARG,
-  JOIN_ARG
+  JOIN_ARG,
+  LEFT_JOIN_ARG
 };
 
 static const struct option GNU_longOptions[] =
@@ -92,6 +94,7 @@ static const struct option GNU_longOptions[] =
     {"uniq", no_argument, NULL, UNIQ_ARG},
     {"group-by", required_argument, NULL, GROUP_BY_ARG},
     {"join", required_argument, NULL, JOIN_ARG},
+    {"left-join", required_argument, NULL, LEFT_JOIN_ARG},
     {NULL, 0, NULL, 0}
   };
 
@@ -105,7 +108,7 @@ recutl_print_help (void)
   /* TRANSLATORS: --help output, recsel synopsis.
      no-wrap */
   printf (_("\
-Usage: recsel [OPTION]... [-t TYPE] [-j FIELD] [-n INDEXES | -e RECORD_EXPR | -q STR | -m NUM] [-c | (-p|-P) FIELD_EXPR] [FILE]...\n"));
+Usage: recsel [OPTION]... [-t TYPE] [-j|-J FIELD] [-n INDEXES | -e RECORD_EXPR | -q STR | -m NUM] [-c | (-p|-P) FIELD_EXPR] [FILE]...\n"));
 
   /* TRANSLATORS: --help output, recsel arguments.
      no-wrap */
@@ -137,7 +140,8 @@ Select and print rec data.\n"), stdout);
   puts ("");
   recutl_print_help_record_selection ();
   fputs (_("\
-  -j, --join=FIELD                    perform an inner join using the specified field.\n"),
+  -j, --join=FIELD                    perform an inner join using the specified field.\n\
+  -J, --left-join=FIELD               perform a left outer join using the specified field.\n"),
          stdout);
 
   puts ("");
@@ -177,7 +181,7 @@ recsel_parse_args (int argc,
                              argv,
                              RECORD_SELECTION_SHORT_ARGS
                              ENCRYPTION_SHORT_ARGS
-                             "S:Cdcp:P:R:UG:j:",
+                             "S:Cdcp:P:R:UG:j:J:",
                              GNU_longOptions,
                              NULL)) != -1)
     {
@@ -229,6 +233,17 @@ recsel_parse_args (int argc,
             recutl_fatal (_("please specify a correct field name to -j|--join.\n"));
 
           recsel_join = xstrdup (optarg);
+          break;
+        case LEFT_JOIN_ARG:
+        case 'J':
+          if (recsel_join)
+            recutl_fatal (_("only one field can be specified as join criteria.\n"));
+
+          if (!rec_field_name_p (optarg))
+            recutl_fatal (_("please specify a correct field name to -J|--left-join.\n"));
+
+          recsel_join = xstrdup (optarg);
+          recsel_left_join = true;
           break;
         case GROUP_BY_ARG:
         case 'G':
@@ -376,6 +391,9 @@ recsel_process_data (rec_db_t db)
 
     if (recsel_uniq)
       flags = flags | REC_F_UNIQ;
+
+    if (recsel_left_join)
+      flags = flags | REC_F_LEFT_JOIN;
 
     rset = rec_db_query (db,
                          recutl_type,

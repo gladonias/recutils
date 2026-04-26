@@ -96,14 +96,17 @@ static rec_rset_t
 rec_db_join (rec_db_t db,
              const char *type1,
              const char *field,
-             const char *type2)
+             const char *type2,
+             bool left_join)
 {
-  /* Note that this function is inefficient like hell.  */
-
   /* Perform the join of the specified record sets, using TYPE1.Field
      = TYPE2.Key as the join criteria.  If some of the specified
      record sets don't exist as named rset in the specified database
-     then return NULL.  */
+     then return NULL.
+
+     When left_join is true, records from rset1 that have no match in
+     rset2 are still included in the result (with the foreign key
+     field removed).  */
 
   const char *key  = NULL;
   rec_rset_t join  = NULL;
@@ -133,12 +136,9 @@ rec_db_join (rec_db_t db,
       rec_mset_iterator_t iter1 = rec_mset_iterator (rec_rset_mset (rset1));
       while (rec_mset_iterator_next (&iter1, MSET_RECORD, (const void **) &record1, NULL))
         {
-          /* For each field record1.key in this record we scan the
-             second record set for record1.field == record2.key
-             instances.  */
-
           size_t num_foreign_keys = rec_record_get_num_fields_by_name (record1, field);
           size_t num_foreign_key = 0;
+          bool matched_any = false;
 
           for (num_foreign_key = 0; num_foreign_key < num_foreign_keys; num_foreign_key++)
             {
@@ -147,17 +147,11 @@ rec_db_join (rec_db_t db,
 
               while (rec_mset_iterator_next (&iter2, MSET_RECORD, (const void **) &record2, NULL))
                 {
-
-                  /* Continue only if there is a field in record1 such as:
-                     record1.field == record2.key.  */
-
                   bool found = false;
                   size_t i = 0;
 
                   rec_field_t key_field = rec_record_get_field_by_name (record2, key, num_foreign_key);
                   if (!key_field)
-                    /* A record without a key is an integrity error,
-                       but none of our business, so just skip it.  */
                     break;
 
                   found = false;
@@ -172,30 +166,36 @@ rec_db_join (rec_db_t db,
                     }
 
                   if (!found)
-                    /* Skip this combination record.  */
                     continue;
 
-                  /* Merge record1 and record2 into a new record.  */
+                  matched_any = true;
 
                   rec_record_t record = rec_db_merge_records (record1, record2, field);
                   if (!record)
-                    /* Out of memory.  */
                     return NULL;
-
-                  /* Remove all the occurrences of the 'field' from
-                     record1, which were substituted in the merge.  */
 
                   while (rec_record_get_num_fields_by_name (record, field) > 0)
                     rec_record_remove_field_by_name (record, field, 0);
 
-                  /* Add it into the join result.  */
-
                   rec_record_set_container (record, join);
                   if (!rec_mset_append (rec_rset_mset (join), MSET_RECORD, (void *) record, MSET_ANY))
-                    /* Out of memory.  */
                     return NULL;
                 }
               rec_mset_iterator_free (&iter2);
+            }
+
+          if (left_join && !matched_any)
+            {
+              rec_record_t record = rec_record_dup (record1);
+              if (!record)
+                return NULL;
+
+              while (rec_record_get_num_fields_by_name (record, field) > 0)
+                rec_record_remove_field_by_name (record, field, 0);
+
+              rec_record_set_container (record, join);
+              if (!rec_mset_append (rec_rset_mset (join), MSET_RECORD, (void *) record, MSET_ANY))
+                return NULL;
             }
         }
       rec_mset_iterator_free (&iter1);
@@ -1018,7 +1018,8 @@ rec_db_query (rec_db_t     db,
 
               if (rec_db_get_rset_by_type (db, referred_type))
                 {
-                  rset = rec_db_join (db, type, join, referred_type);
+                  rset = rec_db_join (db, type, join, referred_type,
+                                     (flags & REC_F_LEFT_JOIN) != 0);
                   if (!rset)
                     /* Out of memory.  */
                     return NULL;
