@@ -56,9 +56,6 @@
  * Global variables.
  */
 
-static bool    recutl_sort_p         = false;
-static char   *recutl_order_rset     = NULL;
-static char   *recutl_order_by_field = NULL;
 static bool    recutl_interactive_p  = false;
 static size_t *recutl_indexes        = NULL;
 static size_t  recutl_indexes_size   = 0;

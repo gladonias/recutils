@@ -274,9 +274,6 @@ rec_field_set_char_location (rec_field_t field,
 const char *
 rec_field_char_location_str (rec_field_t field)
 {
-  char *res;
-
-
   if (field->char_location_str)
     return field->char_location_str;
   else

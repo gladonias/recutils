@@ -444,7 +444,6 @@ rec_write_rset (rec_writer_t writer,
   rec_mset_iterator_t iter;
   rec_mset_elem_t elem;
   void *data;
-  enum rec_writer_mode_e mode = writer->mode;
 
   ret = true;
   wrote_descriptor = false;

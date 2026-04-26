@@ -33,7 +33,7 @@ if CRYPT
   COMMONLIBS += $(LTLIBGCRYPT)
 endif
 
-AM_CFLAGS =
+AM_CFLAGS = -Wall
 if USE_COVERAGE
   AM_CFLAGS += -fprofile-arcs -ftest-coverage
 endif

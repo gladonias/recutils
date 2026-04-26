@@ -517,8 +517,6 @@ rec_record_location (rec_record_t record)
 char *
 rec_record_location_str (rec_record_t record)
 {
-  char *res;
-
   if (record->location_str)
     return record->location_str;
   else
@@ -550,8 +548,6 @@ rec_record_char_location (rec_record_t record)
 char *
 rec_record_char_location_str (rec_record_t record)
 {
-  char *res;
-
   if (record->char_location_str)
     return record->char_location_str;
   else
@@ -583,7 +579,7 @@ rec_record_contains_value (rec_record_t record,
   rec_mset_iterator_t iter;
   rec_field_t field;
   const char *field_value;
-  char *occur;
+  const char *occur;
 
   iter = rec_mset_iterator (record->mset);
   while (rec_mset_iterator_next (&iter, MSET_FIELD, (const void **) &field, NULL))

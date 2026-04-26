@@ -328,7 +328,6 @@ recsel_parse_args (int argc,
 bool
 recsel_process_data (rec_db_t db)
 {
-  int rset_size = 0;
   rec_rset_t rset = NULL;
   rec_writer_t writer = NULL;
 

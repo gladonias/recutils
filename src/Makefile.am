@@ -141,7 +141,7 @@ MOSTLYCLEANFILES += \
 MAINTAINERCLEANFILES += $(srcdir)/rec-sex-tab.c $(srcdir)/rec-sex-tab.h
 EXTRA_DIST += rec-sex-tab.y rec-sex-tab.c rec-sex-tab.h
 
-AM_CFLAGS = 
+AM_CFLAGS = -Wall
 if USE_COVERAGE
   AM_CFLAGS += -fprofile-arcs -ftest-coverage
 endif
