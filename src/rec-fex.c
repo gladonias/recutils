@@ -539,6 +539,9 @@ rec_fex_check (const char *str, enum rec_fex_kind_e kind)
 size_t
 rec_fex_size (rec_fex_t fex)
 {
+  if (!fex)
+    return 0;
+
   return fex->num_elems;
 }
 
@@ -546,7 +549,7 @@ rec_fex_elem_t
 rec_fex_get (rec_fex_t fex,
              size_t position)
 {
-  if ((position < 0) || (position >= fex->num_elems))
+  if (!fex || (position >= fex->num_elems))
     return NULL;
 
   return fex->elems[position];
