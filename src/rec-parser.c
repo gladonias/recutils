@@ -290,7 +290,8 @@ rec_parse_field_value (rec_parser_t parser,
                     {
                       /* Out of memory */
                       parser->error = REC_PARSER_ENOMEM;
-                      return false;
+                      ret = false;
+                      break;
                     }
 
                   if (parser->error > 0)
@@ -344,7 +345,8 @@ rec_parse_field_value (rec_parser_t parser,
                 {
                   /* Out of memory */
                   parser->error = REC_PARSER_ENOMEM;
-                  return false;
+                  ret = false;
+                  break;
                 }
 
               if (parser->error > 0)
@@ -359,7 +361,8 @@ rec_parse_field_value (rec_parser_t parser,
             {
               /* Out of memory */
               parser->error = REC_PARSER_ENOMEM;
-              return false;
+              ret = false;
+              break;
             }
 
           if (parser->error > 0)
@@ -372,7 +375,8 @@ rec_parse_field_value (rec_parser_t parser,
             {
               /* Out of memory */
               parser->error = REC_PARSER_ENOMEM;
-              return false;
+              ret = false;
+              break;
             }
 
           if (parser->error > 0)
@@ -437,11 +441,12 @@ rec_parse_comment (rec_parser_t parser, rec_comment_t *comment)
             {
               /* Out of memory */
               parser->error = REC_PARSER_ENOMEM;
-              return false;
+              break;
             }
         }
 
-      ret = true;
+      if (parser->error == 0)
+        ret = true;
     }
 
   rec_buf_close (buf);
@@ -621,7 +626,7 @@ rec_parse_field_name (rec_parser_t parser,
             {
               /* Out of memory */
               parser->error = REC_PARSER_ENOMEM;
-              return false;
+              ret = false;
             }
         }
       else
@@ -647,7 +652,8 @@ rec_parse_field_name (rec_parser_t parser,
                 {
                   /* Out of memory */
                   parser->error = REC_PARSER_ENOMEM;
-                  return false;
+                  ret = false;
+                  break;
                 }
               if (parser->error > 0)
                 break;
