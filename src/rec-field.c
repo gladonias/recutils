@@ -66,6 +66,9 @@ rec_field_name (rec_field_t field)
 bool
 rec_field_set_name (rec_field_t field, const char *name)
 {
+  if (!field || !name)
+    return false;
+
   free (field->name);
   field->name = strdup (name);
   return (field->name != NULL);
@@ -81,6 +84,9 @@ bool
 rec_field_set_value (rec_field_t field,
                      const char *value)
 {
+  if (!field || !value)
+    return false;
+
   free (field->value);
   field->value = strdup (value);
   return (field->value != NULL);
