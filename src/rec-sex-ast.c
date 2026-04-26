@@ -386,3 +386,36 @@ rec_sex_ast_hash_name_p (rec_sex_ast_t ast,
      REC_SEX_OP_SHA.  */
   return rec_sex_ast_hash_name_p_1 (ast->top, name);
 }
+
+static void
+rec_sex_ast_fix_name_1 (rec_sex_ast_node_t node,
+                         const char *name,
+                         const char *val)
+{
+  if (!node)
+    return;
+
+  /* Skip Name nodes that are children of # (SHA) — those must keep
+     counting from the record.  */
+  if (node->type == REC_SEX_OP_SHA)
+    return;
+
+  if ((node->type == REC_SEX_NAME)
+      && (node->index == -1)
+      && (strcmp (name, node->val.name[0]) == 0))
+    rec_sex_ast_node_fix (node, (char *) val);
+  else
+    {
+      size_t i;
+      for (i = 0; i < node->num_children; i++)
+        rec_sex_ast_fix_name_1 (node->children[i], name, val);
+    }
+}
+
+void
+rec_sex_ast_fix_name (rec_sex_ast_t ast,
+                      const char *name,
+                      const char *val)
+{
+  rec_sex_ast_fix_name_1 (ast->top, name, val);
+}

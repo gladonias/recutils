@@ -1023,33 +1023,52 @@ rec_sex_eval (rec_sex_t sex,
       nf = rec_record_get_num_fields_by_name (record, rec_field_name (field));
       if ((nf > 1)
           && (rec_record_field_mark (record, field) == 0)
-          && (rec_sex_ast_name_p (sex->ast, rec_field_name (field), nf))
-          && (!rec_sex_ast_hash_name_p (sex->ast, rec_field_name (field))))
+          && (rec_sex_ast_name_p (sex->ast, rec_field_name (field), nf)))
         {
+          bool has_hash = rec_sex_ast_hash_name_p (sex->ast,
+                                                    rec_field_name (field));
+
           for (j = 0; j < nf; j++)
             {
               wfield = rec_record_get_field_by_name (record,
                                                      rec_field_name (field),
                                                      j);
-              if (wrec)
-                rec_record_destroy (wrec);
 
               rec_record_mark_field (record, wfield, 1);
 
-              wrec = rec_record_dup (record);
-              rec_record_remove_field_by_name (wrec,
-                                               rec_field_name (field),
-                                               -1); /* Delete all.  */
-              rec_mset_append (rec_record_mset (wrec),
-                               MSET_FIELD,
-                               (void *) rec_field_dup (wfield),
-                               MSET_ANY);
+              if (has_hash)
+                {
+                  /* When #Field co-occurs with Field, fix the Name
+                     nodes to the j-th value so #Field still evaluates
+                     against the full record.  */
+                  rec_sex_ast_node_unfix (rec_sex_ast_top (sex->ast));
+                  rec_sex_ast_fix_name (sex->ast,
+                                        rec_field_name (field),
+                                        rec_field_value (wfield));
+                  EXEC_AST (record);
+                }
+              else
+                {
+                  if (wrec)
+                    rec_record_destroy (wrec);
 
-              EXEC_AST(wrec);
+                  wrec = rec_record_dup (record);
+                  rec_record_remove_field_by_name (wrec,
+                                                   rec_field_name (field),
+                                                   -1); /* Delete all.  */
+                  rec_mset_append (rec_record_mset (wrec),
+                                   MSET_FIELD,
+                                   (void *) rec_field_dup (wfield),
+                                   MSET_ANY);
+
+                  EXEC_AST (wrec);
+                }
 
               if (res)
                 {
-                  rec_record_destroy (wrec);
+                  if (wrec)
+                    rec_record_destroy (wrec);
+                  wrec = NULL;
                   goto exit;
                 }
             }
@@ -1057,6 +1076,9 @@ rec_sex_eval (rec_sex_t sex,
     }
 
   rec_mset_iterator_free (&iter);
+
+  if (wrec)
+    rec_record_destroy (wrec);
 
  exit:
 

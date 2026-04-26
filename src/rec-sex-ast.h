@@ -129,4 +129,11 @@ bool rec_sex_ast_name_p (rec_sex_ast_t ast, const char *name, size_t idx);
    of type REC_SEX_OP_SHA, i.e. it recognizes #NAME in the source.  */
 bool rec_sex_ast_hash_name_p (rec_sex_ast_t ast, const char *name);
 
+/* Fix all unindexed Name nodes for NAME (not under #) to return VAL
+   instead of looking up the record.  Use rec_sex_ast_node_unfix on
+   the top node to clear all fixes.  */
+void rec_sex_ast_fix_name (rec_sex_ast_t ast,
+                           const char *name,
+                           const char *val);
+
 #endif /* ! REC_SEX_AST_H */
