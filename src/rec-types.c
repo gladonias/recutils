@@ -893,11 +893,8 @@ rec_type_new (const char *str)
       /* We are done.  */
       break;
     case REC_TYPE_NONE:
-      /* This point should not be reached.  */
-      fprintf (stderr,
-               _("internal error: rec-types: got REC_TYPE_NONE from \
-rec_type_parse_type_kind() in rec_type_new().\n"));
-      exit (EXIT_FAILURE);
+      rec_type_destroy (new);
+      new = NULL;
       break;
     }
 

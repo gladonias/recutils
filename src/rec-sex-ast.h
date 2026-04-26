@@ -93,10 +93,10 @@ void rec_sex_ast_node_set_int (rec_sex_ast_node_t node, int num);
 double rec_sex_ast_node_real (rec_sex_ast_node_t node);
 void rec_sex_ast_node_set_real (rec_sex_ast_node_t node, double num);
 char *rec_sex_ast_node_str (rec_sex_ast_node_t node);
-void rec_sex_ast_node_set_str (rec_sex_ast_node_t node, char *str);
+bool rec_sex_ast_node_set_str (rec_sex_ast_node_t node, char *str);
 const char *rec_sex_ast_node_name (rec_sex_ast_node_t node);
 const char *rec_sex_ast_node_subname (rec_sex_ast_node_t node);
-void rec_sex_ast_node_set_name (rec_sex_ast_node_t node,
+bool rec_sex_ast_node_set_name (rec_sex_ast_node_t node,
                                 const char *name,
                                 const char *subname);
 
@@ -115,7 +115,7 @@ void rec_sex_ast_node_set_index (rec_sex_ast_node_t node,
 
 void rec_sex_ast_print (rec_sex_ast_t ast);
 
-void rec_sex_ast_node_fix (rec_sex_ast_node_t node, char *val);
+bool rec_sex_ast_node_fix (rec_sex_ast_node_t node, char *val);
 void rec_sex_ast_node_unfix (rec_sex_ast_node_t node);
 bool rec_sex_ast_node_fixed (rec_sex_ast_node_t node);
 char *rec_sex_ast_node_fixed_val (rec_sex_ast_node_t node);
@@ -132,7 +132,7 @@ bool rec_sex_ast_hash_name_p (rec_sex_ast_t ast, const char *name);
 /* Fix all unindexed Name nodes for NAME (not under #) to return VAL
    instead of looking up the record.  Use rec_sex_ast_node_unfix on
    the top node to clear all fixes.  */
-void rec_sex_ast_fix_name (rec_sex_ast_t ast,
+bool rec_sex_ast_fix_name (rec_sex_ast_t ast,
                            const char *name,
                            const char *val);
 

@@ -173,29 +173,32 @@ rec_write_comment (rec_writer_t writer,
          newline characters.  */
 
       bool first = true;
+      bool ok = true;
 
       str = strdup (rec_comment_text (comment));
-      orig_str = str; /* Save a pointer to str to deallocate it later,
-                         since strsep will modify the str
-                         variable.  */
+      if (!str)
+        return false;
+      orig_str = str;
       line = strsep (&str, "\n");
       do
         {
           if (!first)
             {
               if (!rec_writer_putc (writer, '\n'))
-                return false;
+                { ok = false; break; }
             }
 
           if (!rec_writer_putc (writer, '#')
               || !rec_writer_puts (writer, line))
-            return false;
+            { ok = false; break; }
 
           first = false;
         }
       while ((line = strsep (&str, "\n")));
 
       free (orig_str);
+      if (!ok)
+        return false;
     }
 
   return true;

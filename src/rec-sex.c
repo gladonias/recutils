@@ -235,13 +235,10 @@ rec_sex_eval_node (rec_sex_t sex,
     {
     case REC_SEX_NOVAL:
       {
-        fprintf (stderr,
-                 "Application bug: REC_SEX_NOVAL node found.\n\
-Please report this!\n");
-        exit (EXIT_FAILURE);
-        break;
-        /* Operations.  */
+        *status = false;
+        return res;
       }
+      /* Operations.  */
     case REC_SEX_OP_NEG:
     case REC_SEX_OP_ADD:
       {
@@ -1042,9 +1039,10 @@ rec_sex_eval (rec_sex_t sex,
                      nodes to the j-th value so #Field still evaluates
                      against the full record.  */
                   rec_sex_ast_node_unfix (rec_sex_ast_top (sex->ast));
-                  rec_sex_ast_fix_name (sex->ast,
-                                        rec_field_name (field),
-                                        rec_field_value (wfield));
+                  if (!rec_sex_ast_fix_name (sex->ast,
+                                              rec_field_name (field),
+                                              rec_field_value (wfield)))
+                    break;
                   EXEC_AST (record);
                 }
               else

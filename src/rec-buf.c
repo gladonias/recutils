@@ -85,8 +85,8 @@ rec_buf_close (rec_buf_t buf)
 void
 rec_buf_rewind (rec_buf_t buf, int n)
 {
-  if ((buf->used - n) >= 0)
-    buf->used = buf->used - n;
+  if (n >= 0 && (size_t) n <= buf->used)
+    buf->used = buf->used - (size_t) n;
 }
 
 int

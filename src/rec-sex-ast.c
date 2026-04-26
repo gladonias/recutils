@@ -159,15 +159,20 @@ rec_sex_ast_node_str (rec_sex_ast_node_t node)
   return node->val.string;
 }
 
-void
+bool
 rec_sex_ast_node_set_str (rec_sex_ast_node_t node,
                           char *str)
 {
+  char *copy = strdup (str);
+  if (!copy)
+    return false;
+
   if (node->type == REC_SEX_STR)
     free (node->val.string);
 
   node->type = REC_SEX_STR;
-  node->val.string = strdup (str);
+  node->val.string = copy;
+  return true;
 }
 
 const char *
@@ -182,11 +187,26 @@ rec_sex_ast_node_subname (rec_sex_ast_node_t node)
   return node->val.name[1];
 }
 
-void
+bool
 rec_sex_ast_node_set_name (rec_sex_ast_node_t node,
                            const char *name,
                            const char *subname)
 {
+  char *name_copy = strdup (name);
+  if (!name_copy)
+    return false;
+
+  char *subname_copy = NULL;
+  if (subname)
+    {
+      subname_copy = strdup (subname);
+      if (!subname_copy)
+        {
+          free (name_copy);
+          return false;
+        }
+    }
+
   if (node->type == REC_SEX_NAME)
     {
       free (node->val.name[0]);
@@ -194,10 +214,9 @@ rec_sex_ast_node_set_name (rec_sex_ast_node_t node,
     }
 
   node->type = REC_SEX_NAME;
-  node->val.name[0] = strdup (name);
-  node->val.name[1] = NULL;
-  if (subname)
-    node->val.name[1] = strdup (subname);
+  node->val.name[0] = name_copy;
+  node->val.name[1] = subname_copy;
+  return true;
 }
 
 void
@@ -271,13 +290,18 @@ rec_sex_ast_node_reset (rec_sex_ast_node_t node)
   node->index = 0;
 }
 
-void
+bool
 rec_sex_ast_node_fix (rec_sex_ast_node_t node,
                       char *val)
 {
+  char *copy = strdup (val);
+  if (!copy)
+    return false;
+
   free (node->fixed_val);
   node->fixed = true;
-  node->fixed_val = strdup (val);
+  node->fixed_val = copy;
+  return true;
 }
 
 void
@@ -387,35 +411,36 @@ rec_sex_ast_hash_name_p (rec_sex_ast_t ast,
   return rec_sex_ast_hash_name_p_1 (ast->top, name);
 }
 
-static void
+static bool
 rec_sex_ast_fix_name_1 (rec_sex_ast_node_t node,
                          const char *name,
                          const char *val)
 {
   if (!node)
-    return;
+    return true;
 
-  /* Skip Name nodes that are children of # (SHA) — those must keep
-     counting from the record.  */
   if (node->type == REC_SEX_OP_SHA)
-    return;
+    return true;
 
   if ((node->type == REC_SEX_NAME)
       && (node->index == -1)
       && (strcmp (name, node->val.name[0]) == 0))
-    rec_sex_ast_node_fix (node, (char *) val);
+    return rec_sex_ast_node_fix (node, (char *) val);
   else
     {
       size_t i;
       for (i = 0; i < node->num_children; i++)
-        rec_sex_ast_fix_name_1 (node->children[i], name, val);
+        if (!rec_sex_ast_fix_name_1 (node->children[i], name, val))
+          return false;
     }
+
+  return true;
 }
 
-void
+bool
 rec_sex_ast_fix_name (rec_sex_ast_t ast,
                       const char *name,
                       const char *val)
 {
-  rec_sex_ast_fix_name_1 (ast->top, name, val);
+  return rec_sex_ast_fix_name_1 (ast->top, name, val);
 }

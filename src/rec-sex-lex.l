@@ -141,9 +141,14 @@ STRING             '([^']|\\(.|\n))*'|\"([^"]|\\(.|\n))*\"
 
   /* Create a name node.  */
   yylval->node = rec_sex_ast_node_new ();
-  rec_sex_ast_node_set_name (yylval->node, name, subname);
-  rec_sex_ast_node_set_index (yylval->node, index);
-  res = REC_SEX_TOK_NAM;
+  if (!yylval->node
+      || !rec_sex_ast_node_set_name (yylval->node, name, subname))
+    res = REC_SEX_TOK_ERR;
+  else
+    {
+      rec_sex_ast_node_set_index (yylval->node, index);
+      res = REC_SEX_TOK_NAM;
+    }
 
   free (subname);
   free (name);
@@ -161,7 +166,9 @@ STRING             '([^']|\\(.|\n))*'|\"([^"]|\\(.|\n))*\"
   yytext[strlen(yytext) - 1] = 0;
 
   yylval->node = rec_sex_ast_node_new ();
-  rec_sex_ast_node_set_str (yylval->node, yytext + 1);
+  if (!yylval->node
+      || !rec_sex_ast_node_set_str (yylval->node, yytext + 1))
+    return REC_SEX_TOK_ERR;
 
   return REC_SEX_TOK_STR;
 }

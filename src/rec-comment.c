@@ -51,12 +51,17 @@ rec_comment_text (rec_comment_t comment)
   return comment;
 }
 
-void
+bool
 rec_comment_set_text (rec_comment_t *comment,
                       char *text)
 {
+  char *copy = strdup (text);
+  if (!copy)
+    return false;
+
   free (*comment);
-  *comment = strdup (text);
+  *comment = copy;
+  return true;
 }
 
 bool

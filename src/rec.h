@@ -355,7 +355,7 @@ char *rec_comment_text (rec_comment_t comment);
 /* Set the text of a comment.  Any previous text associated with the
    comment is destroyed and its memory freed.  */
 
-void rec_comment_set_text (rec_comment_t *comment, char *text);
+bool rec_comment_set_text (rec_comment_t *comment, char *text);
 
 /* Determine whether the texts stored in two given comments are
    equal.  */
