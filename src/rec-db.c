@@ -509,6 +509,12 @@ rec_db_add_random_indexes (size_t **index,
   char random_state[128];
   struct random_data random_data;
 
+  if (num > SIZE_MAX / (2 * sizeof (size_t)) - 1)
+    {
+      *index = NULL;
+      return;
+    }
+
   *index = malloc (sizeof(size_t) * ((num + 1) * 2));
   if (*index == NULL)
     /* Out of memory.  */
@@ -789,7 +795,7 @@ rec_db_new (void)
         {
           /* Out of memory.  */
           free (new);
-          new = NULL;
+          return NULL;
         }
 
       /* Add the standard field functions to the registry in the
@@ -799,6 +805,7 @@ rec_db_new (void)
       if (!new->aggregates)
         {
           /* Out of memory.  */
+          gl_list_free (new->rset_list);
           free (new);
           return NULL;
         }
