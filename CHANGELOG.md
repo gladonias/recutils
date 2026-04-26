@@ -143,6 +143,72 @@ For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
   identify which descriptor is malformed.
   [Savannah #30674](https://savannah.gnu.org/bugs/?30674)
 
+- Fix memory leak in `recutl_build_db`: use `rec_db_destroy` instead
+  of `free` so internal structures (rset list, aggregate registry) are
+  properly released on parse failure.
+  (recutl.c)
+
+- Fix NULL pointer dereference in `rec_db_delete` when the requested
+  record type does not exist. Added missing NULL guard matching the
+  pattern already present in `rec_db_set`.
+  (rec-db.c)
+
+- Fix `recsel -c` printing record count with `%d` instead of `%zu`,
+  which truncated or misrepresented counts on 64-bit systems.
+  (recsel.c)
+
+- Fix potential out-of-bounds access in `rec2csv` when a field name
+  is an empty string: `field_name[strlen(field_name)-1]` would read
+  before the buffer.
+  (rec2csv.c)
+
+- Fix memory leaks in `rec_db_merge_records`: all OOM error paths now
+  properly clean up the partially-built merge record, duplicated
+  fields, and the iterator.
+  (rec-db.c)
+
+- Fix memory leaks in `rec_db_join`: OOM errors during the join loop
+  and descriptor construction now clean up the join rset and all
+  intermediate allocations.
+  (rec-db.c)
+
+- Fix unsafe `realloc` pattern in `csv2rec`: the result was assigned
+  directly to `ctx->field_names`, losing the original pointer on
+  failure. Now uses a temporary variable and aborts on OOM.
+  (csv2rec.c)
+
+- Check `asprintf` return values in aggregate functions (`Count`,
+  `Avg`, `Min`, `Max`, `Sum`), selection expression evaluator
+  (`rec_sex_eval`), and record location formatting. Failed calls
+  now produce NULL instead of an indeterminate pointer.
+  (rec-aggregate.c, rec-sex.c, rec-record.c)
+
+- Fix extra `printf` argument in `recutl_print_help_footer`: format
+  string had one `%s` but two arguments were passed.
+  (recutl.c)
+
+- Replace `size_t num_rec = -1` (unsigned wraparound from SIZE_MAX)
+  with `size_t num_rec = 0` and restructured loops in `rec_db_query`,
+  `rec_db_insert`, `rec_db_delete`, and `rec_db_set`.
+  (rec-db.c)
+
+- Fix signed/unsigned type mismatch: `rec_fex_elem_min`/`max` return
+  `int` (with `-1` sentinel) but results were stored in `size_t`.
+  Changed local variables to `int` with explicit casts in comparisons.
+  (rec-db.c)
+
+- Remove unused variables: `rset_size` (recsel.c), `recutl_sort_p`,
+  `recutl_order_rset`, `recutl_order_by_field` (recutl.c), `res`
+  (rec-field.c, rec-record.c), `mode` (rec-writer.c), and fix
+  `const` qualifier warning in `rec_record_contains_value`.
+
+### Build
+
+- Enable `-Wall` compiler warnings in `src/Makefile.am` and
+  `utils/Makefile.am`. All project source files now compile
+  warning-free under `-Wall`; remaining warnings are confined to
+  generated code (flex/bison) and gnulib interface mismatches.
+
 ### Added
 
 - `recsel`: new `-J`/`--left-join` option to perform a left outer
