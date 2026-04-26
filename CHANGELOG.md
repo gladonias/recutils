@@ -138,6 +138,23 @@ For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
   the initial `strdup`.
   (rec-writer.c)
 
+- Include the invalid type descriptor string in `recfix` error
+  messages for `%type` and `%typedef` validation, so users can
+  identify which descriptor is malformed.
+  [Savannah #30674](https://savannah.gnu.org/bugs/?30674)
+
+### Added
+
+- `recsel`: new `-J`/`--left-join` option to perform a left outer
+  join. Records from the primary record set that have no matching
+  foreign key in the joined set are included in the output (with the
+  foreign key field removed), unlike `-j` (inner join) which omits
+  them.
+  [Savannah #59283](https://savannah.gnu.org/bugs/?59283)
+
+- `rec_db_query`: new `REC_F_LEFT_JOIN` flag for the public C API to
+  request left outer join semantics through the library.
+
 ### Known Issues
 
 - **Weak key derivation in `rec-crypt.c`**: The AES-128 encryption
