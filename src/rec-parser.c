@@ -430,7 +430,7 @@ rec_parse_comment (rec_parser_t parser, rec_comment_t *comment)
                   break;
                 }
               else
-                c = '\n';
+                ci = '\n';
             }
 
           if (rec_buf_putc (ci, buf) == EOF)
