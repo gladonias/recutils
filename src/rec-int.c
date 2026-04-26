@@ -1066,6 +1066,7 @@ rec_int_merge_remote (rec_rset_t rset,
       remove (tmpfile_name);
     }
 
+  free (rec_type);
   free (rec_url);
   free (rec_file);
 
