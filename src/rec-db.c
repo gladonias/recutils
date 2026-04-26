@@ -278,8 +278,9 @@ rec_db_set_act_rename (rec_rset_t rset,
                        bool rename_descriptor,
                        const char *arg)
 {
-  size_t j, min, max, renamed;
+  size_t j, renamed;
   size_t num_fields;
+  int min, max;
   rec_fex_elem_t fex_elem;
   rec_field_t field;
   const char *field_name;
@@ -306,7 +307,7 @@ rec_db_set_act_rename (rec_rset_t rset,
   renamed = 0;
   for (j = 0; j < num_fields; j++)
     {
-      if ((j >= min) && (j <= max))
+      if ((j >= (size_t) min) && (j <= (size_t) max))
         {
           /* Set the name of the Jth field
              named FIELD_NAME, if it exists.*/
@@ -337,8 +338,9 @@ rec_db_set_act_set (rec_rset_t rset,
                     bool add_p,
                     const char *arg)
 {
-  size_t i, j, min, max;
+  size_t i, j;
   size_t num_fields;
+  int min, max;
   rec_fex_elem_t fex_elem;
   rec_field_t field;
   const char *field_name;
@@ -363,7 +365,7 @@ rec_db_set_act_set (rec_rset_t rset,
 
       for (j = 0; j < num_fields; j++)
         {
-          if ((j >= min) && (j <= max))
+          if ((j >= (size_t) min) && (j <= (size_t) max))
             {
               /* Set the value of the Jth field
                  named FIELD_NAME, if it exists.*/
@@ -444,8 +446,8 @@ rec_db_set_act_delete (rec_rset_t rset,
     {
       rec_fex_elem_t fex_elem = rec_fex_get (fex, i);
       const char *field_name = rec_fex_elem_field_name (fex_elem);
-      size_t min = rec_fex_elem_min (fex_elem);
-      size_t max = rec_fex_elem_max (fex_elem);
+      int min = rec_fex_elem_min (fex_elem);
+      int max = rec_fex_elem_max (fex_elem);
 
       num_fields =
         rec_record_get_num_fields_by_name (record, field_name);
@@ -460,7 +462,7 @@ rec_db_set_act_delete (rec_rset_t rset,
 
       for (j = 0; j < num_fields; j++)
         {
-          if ((j >= min) && (j <= max))
+          if ((j >= (size_t) min) && (j <= (size_t) max))
             {
               /* Mark this field for deletion.  */
               field = rec_record_get_field_by_name (record,
@@ -664,8 +666,8 @@ rec_db_process_fex (rec_db_t db,
       const char *field_name = rec_fex_elem_field_name (elem);
       const char *alias = rec_fex_elem_rewrite_to (elem);
       const char *function_name = rec_fex_elem_function_name (elem);
-      size_t min = rec_fex_elem_min (elem);
-      size_t max = rec_fex_elem_max (elem);
+      int min = rec_fex_elem_min (elem);
+      int max = rec_fex_elem_max (elem);
 
       if (function_name)
         {
@@ -750,7 +752,7 @@ rec_db_process_fex (rec_db_t db,
 
           /* Add the selected fields to the result record.  */
 
-          for (j = min; j < max; j++)
+          for (j = (size_t) min; j < (size_t) max; j++)
             {
               rec_field_t res_field = NULL;
               rec_field_t field =
@@ -1123,7 +1125,7 @@ rec_db_query (rec_db_t     db,
          be duplicated and added to the 'res' record set.  */
 
       rec_record_t record = NULL;
-      size_t num_rec = -1;
+      size_t num_rec = 0;
 
       if (group_by)
         {
@@ -1144,7 +1146,6 @@ rec_db_query (rec_db_t     db,
       while (rec_mset_iterator_next (&iter, MSET_RECORD, (const void **) &record, NULL))
         {
           rec_record_t res_record;
-          num_rec++;
 
           /* Determine whether we must skip this record.  */
 
@@ -1154,7 +1155,7 @@ rec_db_query (rec_db_t     db,
                                          sex,
                                          fast_string,
                                          flags & REC_F_ICASE))
-            continue;
+            { num_rec++; continue; }
 
           /* Process this record.  */
 
@@ -1169,7 +1170,7 @@ rec_db_query (rec_db_t     db,
 
           /* Do not add empty records to the result record set.  */
           if (rec_record_num_elems (res_record) == 0)
-            continue;
+            { num_rec++; continue; }
 
 #if defined REC_CRYPT_SUPPORT
 
@@ -1200,6 +1201,8 @@ rec_db_query (rec_db_t     db,
                                 MSET_RECORD))
             /* Out of memory.  */
             return NULL;
+
+          num_rec++;
         }
       rec_mset_iterator_free (&iter);
     }
@@ -1229,7 +1232,7 @@ rec_db_insert (rec_db_t db,
       rec_rset_t rset = rec_db_get_rset_by_type (db, type);
       if (rset)
         {
-          size_t num_rec = -1;
+          size_t num_rec = 0;
 
           /* If the user requested to replace random records,
              calculate them now for this record set.  */
@@ -1274,8 +1277,6 @@ rec_db_insert (rec_db_t db,
                                            (const void **) &rset_record,
                                            &elem))
               {
-                num_rec++;
-
                 /* Shall we skip this record?  */
                 if (!rec_db_record_selected_p (num_rec,
                                                rset_record,
@@ -1283,11 +1284,12 @@ rec_db_insert (rec_db_t db,
                                                sex,
                                                fast_string,
                                                flags & REC_F_ICASE))
-                  continue;
+                  { num_rec++; continue; }
 
                 /* Replace the record.  */
                 rec_record_set_container (record, rset);
                 rec_mset_elem_set_data (elem, (void *) rec_record_dup (record));
+                num_rec++;
               }
             rec_mset_iterator_free (&iter);
           }
@@ -1414,20 +1416,18 @@ rec_db_delete (rec_db_t     db,
   {
     rec_record_t record = NULL;
     rec_mset_elem_t elem;
-    size_t num_rec = -1;
+    size_t num_rec = 0;
     rec_mset_iterator_t iter = rec_mset_iterator (rec_rset_mset (rset));
 
     while (rec_mset_iterator_next (&iter, MSET_RECORD, (const void **) &record, &elem))
       {
-        num_rec++;
-
         if (!rec_db_record_selected_p (num_rec,
                                        record,
                                        index,
                                        sex,
                                        fast_string,
                                        flags & REC_F_ICASE))
-          continue;
+          { num_rec++; continue; }
 
         if (flags & REC_F_COMMENT_OUT)
           {
@@ -1447,6 +1447,8 @@ rec_db_delete (rec_db_t     db,
           /* Remove the physical record from the record set and
              dispose it.  */
             rec_mset_remove_elem (rec_rset_mset (rset), elem);
+
+        num_rec++;
       }
     rec_mset_iterator_free (&iter);
   }
@@ -1489,21 +1491,19 @@ bool rec_db_set (rec_db_t    db,
   /* Iterate on the records, operating on the selected ones.  */
   {
     rec_record_t record = NULL;
-    size_t num_rec = -1;
+    size_t num_rec = 0;
     rec_mset_iterator_t iter = rec_mset_iterator (rec_rset_mset (rset));
     bool descriptor_renamed = false;
 
     while (rec_mset_iterator_next (&iter, MSET_RECORD, (const void **) &record, NULL))
       {
-        num_rec++;
-
         if (!rec_db_record_selected_p (num_rec,
                                        record,
                                        index,
                                        sex,
                                        fast_string,
                                        flags & REC_F_ICASE))
-          continue;
+          { num_rec++; continue; }
 
         switch (action)
           {
@@ -1567,6 +1567,8 @@ bool rec_db_set (rec_db_t    db,
             /* Ignore an invalid action.  */
             return true;
           }
+
+        num_rec++;
       }
     rec_mset_iterator_free (&iter);
   }

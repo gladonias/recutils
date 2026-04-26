@@ -121,7 +121,7 @@ Report bugs to: %s\n"), PACKAGE_BUGREPORT);
   printf (_("%s home page: <%s>\n"), PACKAGE_NAME, PACKAGE_URL);
 #else
   printf (_("%s home page: <http://www.gnu.org/software/recutils/>\n"),
-          PACKAGE_NAME, PACKAGE);
+          PACKAGE_NAME);
 #endif
   fputs (_("General help using GNU software: <http://www.gnu.org/gethelp/>\n"),
          stdout);
