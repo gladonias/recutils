@@ -72,7 +72,9 @@ rec_encrypt (char   *in,
 
   real_in_size = in_size + 4;
   real_in = malloc (real_in_size + 4);
-  memcpy (real_in, in, real_in_size);
+  if (!real_in)
+    return false;
+  memcpy (real_in, in, in_size);
   memcpy (real_in + real_in_size - 4, &crc, 4);
 
   /* The size of the input buffer must be bigger than AESV2_BLKSIZE,
@@ -86,8 +88,16 @@ rec_encrypt (char   *in,
 
   if (padding != 0)
     {
+      char *tmp;
+
       real_in_size = real_in_size + padding;
-      real_in = realloc (real_in, real_in_size);
+      tmp = realloc (real_in, real_in_size);
+      if (!tmp)
+        {
+          free (real_in);
+          return false;
+        }
+      real_in = tmp;
 
       for (i = 0; i < padding; i++)
         real_in[real_in_size - i - 1] = '\0';
@@ -98,13 +108,17 @@ rec_encrypt (char   *in,
                         GCRY_CIPHER_AES128,
                         GCRY_CIPHER_MODE_CBC,
                         0) != GPG_ERR_NO_ERROR)
-    return false;
+    {
+      free (real_in);
+      return false;
+    }
 
   /* Set the key of the cypher.  */
   password_size = strlen (password);
 
   if (password_size <= 0)
     {
+      free (real_in);
       gcry_cipher_close (handler);
       return false;
     }
@@ -116,6 +130,7 @@ rec_encrypt (char   *in,
   if (gcry_cipher_setkey (handler, key, AESV2_KEYSIZE)
       != GPG_ERR_NO_ERROR)
     {
+      free (real_in);
       gcry_cipher_close (handler);
       return false;
     }
@@ -128,12 +143,19 @@ rec_encrypt (char   *in,
   if (gcry_cipher_setiv (handler, iv, AESV2_BLKSIZE)
       != GPG_ERR_NO_ERROR)
     {
+      free (real_in);
       gcry_cipher_close (handler);
       return false;
     }
 
   *out_size = real_in_size + SALT_SIZE;
   *out = malloc (*out_size);
+  if (!*out)
+    {
+      free (real_in);
+      gcry_cipher_close (handler);
+      return false;
+    }
 
   /* Append salt at the end of the output.  */
   memcpy (*out + real_in_size, iv, SALT_SIZE);
@@ -145,12 +167,15 @@ rec_encrypt (char   *in,
                            real_in,
                            real_in_size) != 0)
     {
-      /* Error.  */
+      free (real_in);
+      free (*out);
+      *out = NULL;
       gcry_cipher_close (handler);
       return false;
     }
 
   /* Close the handler.  */
+  free (real_in);
   gcry_cipher_close (handler);
 
   return true;
@@ -198,7 +223,6 @@ rec_decrypt (char   *in,
   if (gcry_cipher_setkey (handler, key, AESV2_KEYSIZE)
       != GPG_ERR_NO_ERROR)
     {
-      printf ("error setting key\n");
       gcry_cipher_close (handler);
       return false;
     }
@@ -219,13 +243,20 @@ rec_decrypt (char   *in,
   /* Decrypt the data.  */
   *out_size = in_size - salt_size;
   *out = malloc (*out_size);
+  if (!*out)
+    {
+      gcry_cipher_close (handler);
+      return false;
+    }
+
   if (gcry_cipher_decrypt (handler,
                            *out,
                            *out_size,
                            in,
                            in_size - salt_size) != 0)
     {
-      /* Error.  */
+      free (*out);
+      *out = NULL;
       gcry_cipher_close (handler);
       return false;
     }
@@ -247,6 +278,8 @@ rec_decrypt (char   *in,
 #endif
       if (crc32 (*out, outlen - 4) != crc)
         {
+          free (*out);
+          *out = NULL;
           gcry_cipher_close (handler);
           return false;
         }
@@ -255,6 +288,8 @@ rec_decrypt (char   *in,
     }
   else
     {
+      free (*out);
+      *out = NULL;
       gcry_cipher_close (handler);
       return false;
     }
@@ -320,14 +355,20 @@ rec_encrypt_field (rec_field_t field,
   if ((strlen (rec_field_value (field)) >= strlen (REC_ENCRYPTED_PREFIX))
       && (strncmp (rec_field_value (field), REC_ENCRYPTED_PREFIX,
                    strlen (REC_ENCRYPTED_PREFIX)) == 0))
-    return true;
+    {
+      free (field_value);
+      return true;
+    }
 
   if (!rec_encrypt (field_value,
                     strlen (field_value),
                     password,
                     &field_value_encrypted,
                     &out_size))
-    return false;
+    {
+      free (field_value);
+      return false;
+    }
 
   /* Encode the encrypted value into base64.  */
 
@@ -402,7 +443,10 @@ rec_decrypt_field (rec_field_t field,
                        password,
                        &decrypted_value,
                        &decrypted_value_size))
-        rec_field_set_value (field, decrypted_value);
+        {
+          rec_field_set_value (field, decrypted_value);
+          free (decrypted_value);
+        }
 
       /* Free resources.  */
       free (base64_decoded);
