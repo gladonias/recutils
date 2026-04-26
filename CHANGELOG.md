@@ -209,6 +209,11 @@ For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
   warning-free under `-Wall`; remaining warnings are confined to
   generated code (flex/bison) and gnulib interface mismatches.
 
+- Fix incompatible pointer type error in `bash/testrec.c`: change
+  `argv` from `const char **` to `char **` to match the return type
+  of `make_builtin_argv`, resolving `-Wincompatible-pointer-types`
+  and `-Wdiscarded-qualifiers` warnings.
+
 ### Added
 
 - `recsel`: new `-J`/`--left-join` option to perform a left outer

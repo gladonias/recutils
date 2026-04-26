@@ -51,7 +51,7 @@ int
 testrec_builtin (WORD_LIST *list)
 {
   int res = EXECUTION_SUCCESS;
-  const char **argv;
+  char **argv;
   int argc;
   SHELL_VAR *var;
   rec_record_t record;
