@@ -398,6 +398,12 @@ recutl_write_db_to_file (rec_db_t db,
         recutl_fatal (_("cannot create a unique name.\n"));
 
       out = fdopen (des, "w+");
+      if (!out)
+        {
+          close (des);
+          remove (tmp_file_name);
+          recutl_fatal (_("cannot open temporary file.\n"));
+        }
     }
 
   writer = rec_writer_new (out);
@@ -483,13 +489,17 @@ recutl_yesno (char *prompt)
           if (strcmp (line, "yes") == 0)
             {
               res = true;
+              free (line);
               break;
             }
           else if (strcmp (line, "no") == 0)
             {
               res = false;
+              free (line);
               break;
             }
+
+          free (line);
         }
 
       printf ("Please answer 'yes' or 'no'.\n");

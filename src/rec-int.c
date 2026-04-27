@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <regex.h>
 #include <gettext.h>
 #define _(str) dgettext (PACKAGE, str)
@@ -967,6 +968,17 @@ rec_int_merge_remote (rec_rset_t rset,
               tmpfile_name[13] = '\0';
               tmpfile_des = gen_tempname (tmpfile_name, 0, 0, GT_FILE);
               external_file = fdopen (tmpfile_des, "r+");
+              if (!external_file)
+                {
+                  if (tmpfile_des >= 0)
+                    close (tmpfile_des);
+                  curl_easy_cleanup (curl);
+                  ADD_ERROR (errors,
+                             _("%s:%s: error: could not open temporary file for remote descriptor.\n"),
+                             rec_field_source (rec_field), rec_field_location_str (rec_field));
+                  res++;
+                  goto exit;
+                }
 
               /* Fetch the remote file.  */
               curl_easy_setopt (curl, CURLOPT_URL, rec_url);
