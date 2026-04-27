@@ -4,6 +4,42 @@ All notable changes to GNU recutils will be documented in this file.
 
 For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
 
+## [1.9.2] - 2026-04-27
+
+### Added
+
+- **macOS support**: recutils now builds and passes all tests on macOS
+  (both Apple Silicon and Intel) without requiring `--disable-*`
+  workarounds.
+
+- **Native macOS UUID support**: `configure` now detects macOS's built-in
+  `uuid_generate` (from `<uuid/uuid.h>`) when `libuuid` is not present.
+  UUID field types and auto-generation work natively on macOS without
+  installing any additional packages.
+
+- **Bison version check**: `configure` now fails immediately with an
+  actionable error message when GNU Bison >= 3.6 is not found, instead
+  of silently falling back and producing a cryptic build failure later.
+
+- **Texinfo check**: `configure` now requires `makeinfo` (GNU Texinfo)
+  and fails early with install instructions if it is missing, instead of
+  failing midway through `make`.
+
+- **MDB default on macOS**: `mdb2rec` (which depends on `libmdb`) is now
+  disabled by default on macOS (`darwin*`), since `libmdb` is not
+  readily available. It remains enabled by default on Linux. Users can
+  override with `--enable-mdb`.
+
+- **Bash header auto-detection**: The build system now auto-detects bash
+  development headers across `/usr/include/bash` (Linux),
+  `/opt/homebrew/opt/bash/include/bash` (macOS Apple Silicon), and
+  `/usr/local/opt/bash/include/bash` (macOS Intel), instead of
+  hardcoding `/usr/include/bash`. Manual override via
+  `--with-bash-headers=DIR` is still supported.
+
+- **macOS install instructions** added to README.md with Homebrew
+  dependencies and PATH configuration for keg-only formulas.
+
 ## [1.9.1] - 2026-04-26
 
 ### Security

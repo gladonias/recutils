@@ -31,8 +31,9 @@ Homepage: <https://www.gnu.org/software/recutils/>
 - C compiler (GCC or Clang)
 - GNU Autotools (autoconf, automake, libtool)
 - GNU Gettext
+- GNU Texinfo (makeinfo)
 - Flex (>= 2.5.35)
-- Bison
+- GNU Bison (>= 3.6)
 - pkg-config
 
 **Required libraries:**
@@ -43,14 +44,15 @@ Homepage: <https://www.gnu.org/software/recutils/>
 
 - `libgcrypt` and `libgpg-error` -- field-level encryption support
 - `libcurl` -- remote record descriptors
-- `libuuid` -- UUID field type
+- `libuuid` -- UUID field type (on macOS, UUID is provided natively by the system)
 - `libmdb` (mdbtools) -- `mdb2rec` utility for Access database conversion
 - `help2man` -- man page regeneration
+- Bash development headers -- `readrec`/`testrec` bash loadable builtins
 
 On Arch Linux:
 
 ```sh
-sudo pacman -S base-devel check help2man libgcrypt curl
+sudo pacman -S base-devel check help2man libgcrypt curl texinfo
 ```
 
 On Debian/Ubuntu:
@@ -58,7 +60,7 @@ On Debian/Ubuntu:
 ```sh
 sudo apt install build-essential autoconf automake libtool gettext \
     flex bison pkg-config check libgcrypt20-dev libcurl4-openssl-dev \
-    uuid-dev help2man
+    uuid-dev help2man texinfo
 ```
 
 On Fedora:
@@ -66,13 +68,53 @@ On Fedora:
 ```sh
 sudo dnf install gcc autoconf automake libtool gettext-devel flex \
     bison pkgconf check-devel libgcrypt-devel libcurl-devel \
-    libuuid-devel help2man
+    libuuid-devel help2man texinfo
 ```
+
+On macOS (via [Homebrew](https://brew.sh/)):
+
+```sh
+brew install autoconf automake libtool gettext flex bison \
+    pkg-config check help2man texinfo
+```
+
+Homebrew installs Bison and Texinfo as "keg-only" (not linked into
+`/opt/homebrew/bin`) because macOS ships its own outdated versions.
+You must add them to your `PATH` before building:
+
+```sh
+# Apple Silicon (M1/M2/M3/M4)
+export PATH="/opt/homebrew/opt/bison/bin:/opt/homebrew/opt/texinfo/bin:$PATH"
+
+# Intel Mac
+export PATH="/usr/local/opt/bison/bin:/usr/local/opt/texinfo/bin:$PATH"
+```
+
+**macOS notes:**
+- **UUID** is provided natively by the system (`<uuid/uuid.h>`); no
+  extra library or package is needed.
+- **mdb2rec** is disabled by default on macOS since `libmdb` is not
+  readily available. Pass `--enable-mdb` to override if you have it
+  installed.
+- **Bash builtins** are auto-detected. If you install `bash` via
+  Homebrew (`brew install bash`), the headers are found automatically.
+  You can also specify a custom location with
+  `--with-bash-headers=/path/to/bash/include`.
+- **Encryption** requires `libgcrypt`: `brew install libgcrypt`.
 
 ### Building from source
 
+If building from a git checkout (not a release tarball), you need to
+initialize the gnulib submodule and run the bootstrap script first:
+
 ```sh
-autoreconf -i
+git submodule update --init
+./bootstrap
+```
+
+Then configure, build, and test:
+
+```sh
 ./configure
 make
 make check        # run the test suite
@@ -90,8 +132,10 @@ Notable `configure` options:
 
 - `--disable-encryption` -- build without field encryption (drops libgcrypt dependency)
 - `--disable-bash-builtins` -- skip building bash loadable builtins
-- `--with-mdb` / `--without-mdb` -- enable/disable mdb2rec
-- `--with-uuid` / `--without-uuid` -- enable/disable UUID type support
+- `--disable-uuid` -- disable UUID type support
+- `--disable-mdb` -- disable mdb2rec (default on macOS)
+- `--disable-curl` -- disable remote record descriptors
+- `--with-bash-headers=DIR` -- specify bash header location for builtins
 
 ## Quick start
 
