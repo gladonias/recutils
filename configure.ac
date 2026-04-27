@@ -46,6 +46,14 @@ AC_ARG_VAR([LEX_OUTPUT_ROOT], [Base of the file name that the lexer generates.])
 
 gl_PROG_BISON([RECUTILS_BISON],[3.6])
 
+AS_IF([test "x$RECUTILS_BISON" = "x:"], [
+    AC_MSG_ERROR([GNU Bison >= 3.6 is required but was not found.
+  On macOS, install via: brew install bison
+  Then ensure Homebrew bison is in your PATH:
+    export PATH="/opt/homebrew/opt/bison/bin:\$PATH"  (Apple Silicon)
+    export PATH="/usr/local/opt/bison/bin:\$PATH"     (Intel)])
+])
+
 dnl System
 AC_CANONICAL_HOST
 canonical=$host
@@ -61,6 +69,16 @@ AS_IF([test "x$cross_compiling" = "xno"], [
   AM_MISSING_PROG([HELP2MAN], [help2man])
 ], [
   HELP2MAN=:
+])
+
+dnl Require makeinfo (GNU Texinfo) for documentation
+AC_CHECK_PROG([MAKEINFO_CHECK], [makeinfo], [yes], [no])
+AS_IF([test "x$MAKEINFO_CHECK" = "xno"], [
+    AC_MSG_ERROR([makeinfo is required (part of GNU Texinfo).
+  On macOS, install via: brew install texinfo
+  Then ensure Homebrew texinfo is in your PATH:
+    export PATH="/opt/homebrew/opt/texinfo/bin:\$PATH"  (Apple Silicon)
+    export PATH="/usr/local/opt/texinfo/bin:\$PATH"     (Intel)])
 ])
 
 dnl Seach for headers
@@ -100,12 +118,23 @@ AC_ARG_ENABLE([uuid],
               [uuid_enabled=$enableval], [uuid_enabled=yes])
 
 have_uuid=no
+UUIDLIBS=
 AS_IF([test "x$uuid_enabled" = "xyes"], [
-    AC_CHECK_LIB([uuid], [uuid_generate], [have_uuid=yes], [])
-    AS_IF([test "x$have_uuid" = "xyes"], [
-        UUIDLIBS=-luuid
-    ], [
-        AC_MSG_ERROR([uuid support enabled but libuuid not found])
+    dnl Try libuuid first (Linux)
+    AC_CHECK_LIB([uuid], [uuid_generate], [have_uuid=yes; UUIDLIBS=-luuid], [])
+    dnl If that failed, try without -luuid (macOS provides uuid in system libs)
+    AS_IF([test "x$have_uuid" = "xno"], [
+        AC_MSG_CHECKING([for uuid_generate without -luuid (macOS)])
+        AC_LINK_IFELSE(
+            [AC_LANG_PROGRAM([[#include <uuid/uuid.h>]],
+                             [[uuid_t uu; uuid_generate(uu);]])],
+            [have_uuid=yes; AC_MSG_RESULT([yes])],
+            [AC_MSG_RESULT([no])])
+    ])
+    AS_IF([test "x$have_uuid" = "xno"], [
+        AC_MSG_ERROR([uuid support enabled but no uuid implementation found.
+  On Linux, install libuuid-dev (Debian/Ubuntu) or libuuid-devel (Fedora).
+  On macOS, uuid is provided natively and should be detected automatically.])
     ])
 ], [])
 AC_SUBST([UUIDLIBS])
@@ -129,10 +158,15 @@ AS_IF([test "x$crypt_enabled" = "xyes"], [
 AM_CONDITIONAL([CRYPT], [test "x$crypt_support" = "xyes"])
 AC_SUBST([crypt_support])
 
+mdb_default=yes
+case "${host_os}" in
+    darwin*) mdb_default=no ;;
+esac
+
 AC_ARG_ENABLE([mdb],
               AS_HELP_STRING([--enable-mdb],
-                             [Build the mdb2rec utility (default is YES)]),
-              [mdb_enabled=$enableval], [mdb_enabled=yes])
+                             [Build the mdb2rec utility (default is YES on Linux, NO on macOS)]),
+              [mdb_enabled=$enableval], [mdb_enabled=$mdb_default])
 have_mdb=no
 AS_IF([test "x$mdb_enabled" = "xyes"], [
     AC_CHECK_LIB([mdb], [mdb_init_backends], [have_mdb=yes], [])
@@ -174,19 +208,25 @@ AM_CONDITIONAL([UUID_TYPE], [test "x$have_uuid" = "xyes"])
 
 dnl Bash builtins
 
-dnl It would be much better to use AC_CHECK_HEADER([bash/config.h]) instead
-dnl of a fixed value like /usr/include/bash, but then it would be difficult
-dnl to set a proper search path for the preprocessor, since the bash
-dnl headers which are needed to compile loadable builtins are not
-dnl very well designed.
-
-BASH_HEADERS=/usr/include/bash
 AC_ARG_WITH([bash-headers],
             AS_HELP_STRING([--with-bash-headers],
-                           [location of the bash header files (default is /usr/include/bash)]),
-            [BASH_HEADERS=$withval],)
+                           [location of the bash header files (auto-detected by default)]),
+            [BASH_HEADERS=$withval],
+            [BASH_HEADERS=auto])
 
-AS_IF([test -f ${BASH_HEADERS}/config.h], [
+AS_IF([test "x$BASH_HEADERS" = "xauto"], [
+    AS_IF([test -f /usr/include/bash/config.h], [
+        BASH_HEADERS=/usr/include/bash
+    ], [test -f /opt/homebrew/opt/bash/include/bash/config.h], [
+        BASH_HEADERS=/opt/homebrew/opt/bash/include/bash
+    ], [test -f /usr/local/opt/bash/include/bash/config.h], [
+        BASH_HEADERS=/usr/local/opt/bash/include/bash
+    ], [
+        BASH_HEADERS=
+    ])
+])
+
+AS_IF([test -n "$BASH_HEADERS" && test -f "${BASH_HEADERS}/config.h"], [
    AC_SUBST([BASH_HEADERS])
    bash_headers_available=yes
 ], [
