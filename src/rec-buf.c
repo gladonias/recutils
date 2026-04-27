@@ -71,7 +71,11 @@ rec_buf_close (rec_buf_t buf)
 {
   /* Adjust the buffer.  */
   if (buf->used > 0)
-      buf->data = realloc (buf->data, buf->used + 1);
+    {
+      char *tmp = realloc (buf->data, buf->used + 1);
+      if (tmp)
+        buf->data = tmp;
+    }
   buf->data[buf->used] = '\0';
 
   /* Update the user-provided buffer and size.  */
