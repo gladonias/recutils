@@ -4,6 +4,44 @@ All notable changes to GNU recutils will be documented in this file.
 
 For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
 
+## [1.9.3] - 2026-04-27
+
+### Security
+
+- Fix memory leak in `recutl_yesno`: the string returned by `readline()`
+  was never freed, leaking memory on every call and on every invalid
+  input retry.
+  (recutl.c)
+
+- Fix NULL pointer dereference after `fdopen()` in
+  `recutl_write_db_to_file()` and in `rec_int_check_rset()` (under
+  `REMOTE_DESCRIPTORS`).  If `fdopen` failed, the NULL `FILE *` was
+  passed directly to `rec_writer_new` / `curl_easy_setopt`, causing a
+  crash.
+  (recutl.c, rec-int.c)
+
+- Fix string ownership confusion in selection expression evaluator:
+  `rec_sex_eval_node()` returned `str_val` with mixed ownership
+  (heap-allocated, borrowed from AST, or static `""`), making it unsafe
+  to free results and causing memory leaks in all callers.  All string
+  paths now return heap-allocated strings, and a cleanup label frees
+  intermediate child values on all exit paths.
+  (rec-sex.c)
+
+- Fix unchecked floating-point division by zero in the selection
+  expression evaluator.  The integer division path checked for zero
+  divisor, but the floating-point path did not, producing silent NaN/Inf.
+  (rec-sex.c)
+
+- Fix missing NULL check after `malloc()` in `rec_record_uniq()`.
+  On out-of-memory, `memset` and subsequent array access would crash.
+  (rec-record.c)
+
+- Fix unsafe `realloc()` in `rec_buf_close()` where failure would lose
+  the original buffer pointer (memory leak) and then crash on
+  NUL-termination.
+  (rec-buf.c)
+
 ## [1.9.2] - 2026-04-27
 
 ### Added
