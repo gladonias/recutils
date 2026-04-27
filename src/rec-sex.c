@@ -57,9 +57,7 @@ struct rec_sex_val_s
                                   rec_sex_ast_node_child (node, (NUM)), \
                                   status);                              \
       if (!*status)                                                     \
-        {                                                               \
-          return res;                                                   \
-        }                                                               \
+        goto cleanup;                                                   \
     }                                                                   \
     while (0)
 
@@ -84,7 +82,7 @@ struct rec_sex_val_s
                 if (!rec_atoi ((VAL).str_val, &(DEST))) \
                 {                                       \
                   *status = false;                      \
-                  return res;                           \
+                  goto cleanup;                         \
                 }                                       \
               }                                         \
           break;                                        \
@@ -119,7 +117,7 @@ struct rec_sex_val_s
                 if (!rec_atod ((VAL).str_val, &(DEST))) \
                 {                                       \
                   *status = false;                      \
-                  return res;                           \
+                  goto cleanup;                         \
                 }                                       \
               }                                         \
           break;                                        \
@@ -136,13 +134,13 @@ struct rec_sex_val_s
         case REC_SEX_VAL_REAL:                          \
           {                                             \
            *status = false;                             \
-           return res;                                  \
+           goto cleanup;                                \
            break;                                       \
           }                                             \
         case REC_SEX_VAL_INT:                           \
           {                                             \
             *status = false;                            \
-            return res;                                 \
+            goto cleanup;                               \
             break;                                      \
           }                                             \
         case REC_SEX_VAL_STR:                           \
@@ -150,7 +148,7 @@ struct rec_sex_val_s
             if (!parse_datetime (&(DEST), (VAL).str_val, NULL))\
             {                                           \
               *status = false;                          \
-              return res;                               \
+              goto cleanup;                             \
             }                                           \
                                                         \
             break;                                      \
@@ -236,7 +234,7 @@ rec_sex_eval_node (rec_sex_t sex,
     case REC_SEX_NOVAL:
       {
         *status = false;
-        return res;
+        goto cleanup;
       }
       /* Operations.  */
     case REC_SEX_OP_NEG:
@@ -366,7 +364,7 @@ rec_sex_eval_node (rec_sex_t sex,
               {
                 /* Error: division by zero */
                 *status = false;
-                return res;
+                goto cleanup;
               }
           }
 
@@ -392,7 +390,7 @@ rec_sex_eval_node (rec_sex_t sex,
           {
             /* Error: division by zero */
             *status = false;
-            return res;
+            goto cleanup;
           }
 
         break;
@@ -513,7 +511,7 @@ rec_sex_eval_node (rec_sex_t sex,
           {
             /* Error.  */
             *status = false;
-            return res;
+            goto cleanup;
           }
 
         break;
@@ -716,7 +714,7 @@ rec_sex_eval_node (rec_sex_t sex,
             if (!res.str_val)
               {
                 *status = false;
-                return res;
+                goto cleanup;
               }
             memcpy (res.str_val, child_val1.str_val, str1_size);
             memcpy (res.str_val + str1_size, child_val2.str_val, str2_size);
@@ -725,7 +723,7 @@ rec_sex_eval_node (rec_sex_t sex,
         else
           {
             *status = false;
-            return res;
+            goto cleanup;
           }
 
         break;
@@ -755,7 +753,7 @@ rec_sex_eval_node (rec_sex_t sex,
             != REC_SEX_NAME)
           {
             *status = false;
-            return res;
+            goto cleanup;
           }
 
         field_name = rec_sex_ast_node_name (child);
@@ -815,7 +813,12 @@ rec_sex_eval_node (rec_sex_t sex,
     case REC_SEX_STR:
       {
         res.type = REC_SEX_VAL_STR;
-        res.str_val = rec_sex_ast_node_str (node);
+        res.str_val = strdup (rec_sex_ast_node_str (node));
+        if (!res.str_val)
+          {
+            *status = false;
+            goto cleanup;
+          }
         break;
       }
     case REC_SEX_NAME:
@@ -851,7 +854,7 @@ rec_sex_eval_node (rec_sex_t sex,
                   if (!effective_field_name)
                     {
                       *status = false;
-                      return res;
+                      goto cleanup;
                     }
                   memcpy (effective_field_name, field_name, strlen(field_name));
                   effective_field_name[strlen(field_name)] = '_';
@@ -868,17 +871,35 @@ rec_sex_eval_node (rec_sex_t sex,
             if (field)
               res.str_val = strdup (rec_field_value (field));
             else
-              /* No field => ""  */
-              res.str_val = "";
+              res.str_val = strdup ("");
+
+            if (!res.str_val)
+              {
+                *status = false;
+                goto cleanup;
+              }
 
             if (tofix)
-              /* Make this node fixed.  */
               rec_sex_ast_node_fix (node, res.str_val);
           }
 
         break;
       }
     }
+
+ cleanup:
+  if (child_val1.type == REC_SEX_VAL_STR
+      && child_val1.str_val
+      && child_val1.str_val != res.str_val)
+    free (child_val1.str_val);
+  if (child_val2.type == REC_SEX_VAL_STR
+      && child_val2.str_val
+      && child_val2.str_val != res.str_val)
+    free (child_val2.str_val);
+  if (child_val3.type == REC_SEX_VAL_STR
+      && child_val3.str_val
+      && child_val3.str_val != res.str_val)
+    free (child_val3.str_val);
 
   return res;
 }
@@ -947,9 +968,14 @@ rec_sex_compile (rec_sex_t sex,
             break;                                                      \
           }                                                             \
         case REC_SEX_VAL_REAL:                                          \
+          {                                                             \
+            res = false;                                                \
+            break;                                                      \
+          }                                                             \
         case REC_SEX_VAL_STR:                                           \
           {                                                             \
             res = false;                                                \
+            free (val.str_val);                                         \
             break;                                                      \
           }                                                             \
         }                                                               \
@@ -971,8 +997,11 @@ rec_sex_eval_str (rec_sex_t sex,
                            &status);
 
   if (!status)
-    /* Error evaluating the expression.  */
-    return NULL;
+    {
+      if (val.type == REC_SEX_VAL_STR)
+        free (val.str_val);
+      return NULL;
+    }
 
   res = NULL;
   switch (val.type)
@@ -986,7 +1015,7 @@ rec_sex_eval_str (rec_sex_t sex,
         res = NULL;
       break;
     case REC_SEX_VAL_STR:
-      res = strdup (val.str_val);
+      res = val.str_val;
       break;
     }
 
