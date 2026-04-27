@@ -650,7 +650,12 @@ rec_record_uniq (rec_record_t record)
   /* Create a map of the fields to remove and initialize all the
      entries to false.  */
   num_fields = rec_record_num_fields (record);
+  if (num_fields == 0)
+    return;
+
   to_remove = malloc (sizeof(bool) * num_fields);
+  if (!to_remove)
+    return;
   memset (to_remove, false, num_fields);
 
   /* Iterate on the fields of the record an mark the fields that will
