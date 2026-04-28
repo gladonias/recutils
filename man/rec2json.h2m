@@ -1,0 +1,23 @@
+[EXAMPLES]
+Convert all records to JSON:
+
+  rec2json contacts.rec
+
+Convert only a specific record type:
+
+  rec2json -t Task todo.rec
+
+Sort the output by a field:
+
+  rec2json -S Name contacts.rec
+
+Pipe from recsel for filtered JSON output:
+
+  recsel -e "Status = 'open'" todo.rec | rec2json
+
+[SEE ALSO]
+.BR rec2csv (1),
+.BR csv2rec (1),
+.BR recsel (1),
+.BR recinf (1),
+.BR recfix (1).

@@ -23,13 +23,20 @@ man_MANS = recdel.1 \
            recset.1 \
            recfmt.1 \
            csv2rec.1 \
-           rec2csv.1
+           rec2csv.1 \
+           rec2json.1 \
+           rec2sql.1
 
 if COMPILE_MDB2REC
 man_MANS += mdb2rec.1
 endif
 
-EXTRA_DIST = $(man_MANS)
+H2M_FILES = recsel.h2m recins.h2m recdel.h2m recset.h2m recinf.h2m \
+            recfix.h2m recfmt.h2m rec2csv.h2m csv2rec.h2m mdb2rec.h2m \
+            rec2json.h2m \
+            rec2sql.h2m
+
+EXTRA_DIST = $(man_MANS) $(H2M_FILES)
 MAINTAINERCLEANFILES = $(man_MANS)
 
 # The man pages depend on the --help strings and the version number.
@@ -39,35 +46,42 @@ common_mandeps = $(top_srcdir)/configure.ac \
 # Depend on the source, not the binary; we don't need to regenerate
 # the binary when any source file changes, only the main one.
 # Use -o so that the `missing' program can infer the output file.
+# Use --include to add EXAMPLES and SEE ALSO sections from .h2m files.
 
-rec2csv.1: $(top_srcdir)/utils/rec2csv.c $(common_mandeps)
-	$(HELP2MAN) -p recutils --name="rec to csv converter" $(builddir)/../utils/rec2csv -o $@
+rec2csv.1: $(top_srcdir)/utils/rec2csv.c $(common_mandeps) $(srcdir)/rec2csv.h2m
+	$(HELP2MAN) -p recutils --name="rec to csv converter" --include=$(srcdir)/rec2csv.h2m $(builddir)/../utils/rec2csv -o $@
 
-csv2rec.1: $(top_srcdir)/utils/csv2rec.c $(common_mandeps)
-	$(HELP2MAN) -p recutils --name="csv to rec converter" $(builddir)/../utils/csv2rec -o $@
+rec2json.1: $(top_srcdir)/utils/rec2json.c $(common_mandeps) $(srcdir)/rec2json.h2m
+	$(HELP2MAN) -p recutils --name="rec to json converter" --include=$(srcdir)/rec2json.h2m $(builddir)/../utils/rec2json -o $@
 
-mdb2rec.1: $(top_srcdir)/utils/mdb2rec.c $(common_mandeps)
-	$(HELP2MAN) -p recutils --name="mdb to rec converter" $(builddir)/../utils/mdb2rec -o $@
+rec2sql.1: $(top_srcdir)/utils/rec2sql.c $(common_mandeps) $(srcdir)/rec2sql.h2m
+	$(HELP2MAN) -p recutils --name="rec to sql converter" --include=$(srcdir)/rec2sql.h2m $(builddir)/../utils/rec2sql -o $@
 
-recdel.1: $(top_srcdir)/utils/recdel.c $(common_mandeps)
-	$(HELP2MAN) -p recutils --name="remove records from a recfile" $(builddir)/../utils/recdel -o $@
+csv2rec.1: $(top_srcdir)/utils/csv2rec.c $(common_mandeps) $(srcdir)/csv2rec.h2m
+	$(HELP2MAN) -p recutils --name="csv to rec converter" --include=$(srcdir)/csv2rec.h2m $(builddir)/../utils/csv2rec -o $@
 
-recfix.1: $(top_srcdir)/utils/recfix.c $(common_mandeps)
-	$(HELP2MAN) -p recutils --name="check a recfile for errors" $(builddir)/../utils/recfix -o $@
+mdb2rec.1: $(top_srcdir)/utils/mdb2rec.c $(common_mandeps) $(srcdir)/mdb2rec.h2m
+	$(HELP2MAN) -p recutils --name="mdb to rec converter" --include=$(srcdir)/mdb2rec.h2m $(builddir)/../utils/mdb2rec -o $@
 
-recinf.1: $(top_srcdir)/utils/recinf.c $(common_mandeps)
-	$(HELP2MAN) -p recutils --name="print information about a recfile" $(builddir)/../utils/recinf -o $@
+recdel.1: $(top_srcdir)/utils/recdel.c $(common_mandeps) $(srcdir)/recdel.h2m
+	$(HELP2MAN) -p recutils --name="remove records from a recfile" --include=$(srcdir)/recdel.h2m $(builddir)/../utils/recdel -o $@
 
-recins.1: $(top_srcdir)/utils/recins.c $(common_mandeps)
-	$(HELP2MAN) -p recutils --name="insert records in a recfile" $(builddir)/../utils/recins -o $@
+recfix.1: $(top_srcdir)/utils/recfix.c $(common_mandeps) $(srcdir)/recfix.h2m
+	$(HELP2MAN) -p recutils --name="check a recfile for errors" --include=$(srcdir)/recfix.h2m $(builddir)/../utils/recfix -o $@
 
-recsel.1: $(top_srcdir)/utils/recsel.c $(common_mandeps)
-	$(HELP2MAN) -p recutils --name="print records from a recfile" $(builddir)/../utils/recsel -o $@
+recinf.1: $(top_srcdir)/utils/recinf.c $(common_mandeps) $(srcdir)/recinf.h2m
+	$(HELP2MAN) -p recutils --name="print information about a recfile" --include=$(srcdir)/recinf.h2m $(builddir)/../utils/recinf -o $@
 
-recset.1: $(top_srcdir)/utils/recset.c $(common_mandeps)
-	$(HELP2MAN) -p recutils --name="manipulate fields in a recfile" $(builddir)/../utils/recset -o $@
+recins.1: $(top_srcdir)/utils/recins.c $(common_mandeps) $(srcdir)/recins.h2m
+	$(HELP2MAN) -p recutils --name="insert records in a recfile" --include=$(srcdir)/recins.h2m $(builddir)/../utils/recins -o $@
 
-recfmt.1: $(top_srcdir)/utils/recfmt.c $(common_mandeps)
-	$(HELP2MAN) -p recutils --name="apply a template to records" $(builddir)/../utils/recfmt -o $@
+recsel.1: $(top_srcdir)/utils/recsel.c $(common_mandeps) $(srcdir)/recsel.h2m
+	$(HELP2MAN) -p recutils --name="print records from a recfile" --include=$(srcdir)/recsel.h2m $(builddir)/../utils/recsel -o $@
+
+recset.1: $(top_srcdir)/utils/recset.c $(common_mandeps) $(srcdir)/recset.h2m
+	$(HELP2MAN) -p recutils --name="manipulate fields in a recfile" --include=$(srcdir)/recset.h2m $(builddir)/../utils/recset -o $@
+
+recfmt.1: $(top_srcdir)/utils/recfmt.c $(common_mandeps) $(srcdir)/recfmt.h2m
+	$(HELP2MAN) -p recutils --name="apply a template to records" --include=$(srcdir)/recfmt.h2m $(builddir)/../utils/recfmt -o $@
 
 # End of Makefile.am

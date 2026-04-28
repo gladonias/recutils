@@ -1,0 +1,26 @@
+[EXAMPLES]
+Set the Status field of record 0 to "done":
+
+  recset -n 0 -f Status -S done todo.rec
+
+Rename a field in all records:
+
+  recset -f OldName -r NewName data.rec
+
+Add a Tag field to records matching an expression:
+
+  recset -e "Priority = 'high'" -f Tag -a urgent todo.rec
+
+Delete a field from all records of a given type:
+
+  recset -t Contact -f Notes -d contacts.rec
+
+[SEE ALSO]
+.BR recsel (1),
+.BR recins (1),
+.BR recdel (1),
+.BR recinf (1),
+.BR recfix (1),
+.BR rec2csv (1),
+.BR rec2json (1),
+.BR csv2rec (1).

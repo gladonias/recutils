@@ -17,6 +17,30 @@ For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
   `$(libdir)/pkgconfig`, allowing `pkg-config --cflags recutils` and
   `pkg-config --libs recutils`.
 
+- **`rec2sql` converter**: New utility to export rec data as SQL
+  `INSERT` statements.  Uses the record type as the table name by
+  default (overridable with `-T`/`--table`).  Multi-valued fields are
+  concatenated with newline separators.  Supports `-t`/`--type` and
+  `-S`/`--sort`.
+
+- **Library API documentation**: New Texinfo chapter documenting the
+  librec public C API: initialization, parsing, databases, record
+  sets, records, fields, selection expressions, writing, and memory
+  management conventions.
+
+- **Man page improvements**: All man pages now include EXAMPLES and
+  cross-referenced SEE ALSO sections via help2man `--include` files.
+  Man pages added for `rec2json` and `rec2sql`.
+
+- **Configure feature summary**: `./configure` now prints a summary
+  of which optional features (encryption, UUID, remote descriptors,
+  bash builtins, mdb2rec) are enabled or disabled.
+
+- **Test coverage for new utilities**: System tests added for
+  `rec2json` (7 tests) and `rec2sql` (7 tests) covering basic
+  output, multi-valued fields, type filtering, escaping, and edge
+  cases.
+
 ### Fixed
 
 - Fix `rec_rset_dup()` losing type registry, field properties, and

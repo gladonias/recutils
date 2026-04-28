@@ -1,0 +1,22 @@
+[EXAMPLES]
+Insert a new record into a file:
+
+  recins -f Name -v "John Doe" -f Email -v "john@example.com" contacts.rec
+
+Insert a record of a specific type:
+
+  recins -t Task -f Title -v "Fix bug" -f Status -v Open todo.rec
+
+Replace the record at position 3:
+
+  recins -n 3 -f Name -v "Jane Doe" contacts.rec
+
+[SEE ALSO]
+.BR recsel (1),
+.BR recdel (1),
+.BR recset (1),
+.BR recinf (1),
+.BR recfix (1),
+.BR rec2csv (1),
+.BR rec2json (1),
+.BR csv2rec (1).

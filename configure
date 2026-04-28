@@ -68191,12 +68191,35 @@ fi
 
 
 
-if test "x$bash_headers_available" = "xno" || test "x$bash_builtins_enabled" = "xno"
+bash_builtins_status=no
+if test "x$bash_headers_available" = "xyes" && test "x$bash_builtins_enabled" = "xyes"
 then :
-
-    { printf '%s\n' "$as_me:${as_lineno-$LINENO}: WARNING: Not building the recutils bash builtins" >&5
-printf '%s\n' "$as_me: WARNING: Not building the recutils bash builtins" >&2;}
-
+  bash_builtins_status=yes
 fi
+
+mdb2rec_status=no
+if test "x$have_glib" = "xyes" && test "x$have_mdb" = "xyes"
+then :
+  mdb2rec_status=yes
+fi
+
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: " >&5
+printf '%s\n' "$as_me: " >&6;}
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: GNU recutils $PACKAGE_VERSION configuration summary:" >&5
+printf '%s\n' "$as_me: GNU recutils $PACKAGE_VERSION configuration summary:" >&6;}
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: " >&5
+printf '%s\n' "$as_me: " >&6;}
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}:   Encryption (libgcrypt) .... $crypt_support" >&5
+printf '%s\n' "$as_me:   Encryption (libgcrypt) .... $crypt_support" >&6;}
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}:   UUID field types .......... $have_uuid" >&5
+printf '%s\n' "$as_me:   UUID field types .......... $have_uuid" >&6;}
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}:   Remote descriptors (curl) . $have_curl" >&5
+printf '%s\n' "$as_me:   Remote descriptors (curl) . $have_curl" >&6;}
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}:   Bash builtins ............. $bash_builtins_status" >&5
+printf '%s\n' "$as_me:   Bash builtins ............. $bash_builtins_status" >&6;}
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}:   mdb2rec (libmdb) .......... $mdb2rec_status" >&5
+printf '%s\n' "$as_me:   mdb2rec (libmdb) .......... $mdb2rec_status" >&6;}
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: " >&5
+printf '%s\n' "$as_me: " >&6;}
 
 

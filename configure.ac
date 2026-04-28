@@ -279,10 +279,24 @@ AC_CONFIG_FILES(Makefile
                 recutils.pc)
 AC_OUTPUT
 
-dnl Report warnings
+dnl Feature summary
 
-AS_IF([test "x$bash_headers_available" = "xno" || test "x$bash_builtins_enabled" = "xno"], [
-    AC_MSG_WARN([Not building the recutils bash builtins])
-], [])
+bash_builtins_status=no
+AS_IF([test "x$bash_headers_available" = "xyes" && test "x$bash_builtins_enabled" = "xyes"],
+      [bash_builtins_status=yes])
+
+mdb2rec_status=no
+AS_IF([test "x$have_glib" = "xyes" && test "x$have_mdb" = "xyes"],
+      [mdb2rec_status=yes])
+
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([GNU recutils $PACKAGE_VERSION configuration summary:])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([  Encryption (libgcrypt) .... $crypt_support])
+AC_MSG_NOTICE([  UUID field types .......... $have_uuid])
+AC_MSG_NOTICE([  Remote descriptors (curl) . $have_curl])
+AC_MSG_NOTICE([  Bash builtins ............. $bash_builtins_status])
+AC_MSG_NOTICE([  mdb2rec (libmdb) .......... $mdb2rec_status])
+AC_MSG_NOTICE([])
 
 dnl End of configure.ac

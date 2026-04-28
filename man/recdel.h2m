@@ -1,0 +1,22 @@
+[EXAMPLES]
+Delete the record at position 2:
+
+  recdel -n 2 contacts.rec
+
+Delete all records matching an expression:
+
+  recdel -e "Status = 'closed'" -t Task todo.rec
+
+Comment out records instead of deleting them:
+
+  recdel -c -e "Status = 'archived'" todo.rec
+
+[SEE ALSO]
+.BR recsel (1),
+.BR recins (1),
+.BR recset (1),
+.BR recinf (1),
+.BR recfix (1),
+.BR rec2csv (1),
+.BR rec2json (1),
+.BR csv2rec (1).

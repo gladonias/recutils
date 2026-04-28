@@ -1,0 +1,22 @@
+[EXAMPLES]
+Check a recfile for errors:
+
+  recfix contacts.rec
+
+Check and automatically fix errors where possible:
+
+  recfix --fix contacts.rec
+
+Check all rec files in the current directory:
+
+  recfix *.rec
+
+[SEE ALSO]
+.BR recsel (1),
+.BR recins (1),
+.BR recdel (1),
+.BR recset (1),
+.BR recinf (1),
+.BR rec2csv (1),
+.BR rec2json (1),
+.BR csv2rec (1).

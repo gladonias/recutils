@@ -1,0 +1,22 @@
+[EXAMPLES]
+List the record types in a file:
+
+  recinf contacts.rec
+
+Show detailed descriptor information:
+
+  recinf -d contacts.rec
+
+Show information for a specific type:
+
+  recinf -t Task todo.rec
+
+[SEE ALSO]
+.BR recsel (1),
+.BR recins (1),
+.BR recdel (1),
+.BR recset (1),
+.BR recfix (1),
+.BR rec2csv (1),
+.BR rec2json (1),
+.BR csv2rec (1).

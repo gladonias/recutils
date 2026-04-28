@@ -64,6 +64,8 @@ Documentation License''.
 * recfix: (recutils)Invoking recfix.           Fix recfiles.
 * csv2rec: (recutils)Invoking csv2rec.         CSV to recfiles.
 * rec2csv: (recutils)Invoking rec2csv.         Recfiles to CSV.
+* rec2json: (recutils)Invoking rec2json.       Recfiles to JSON.
+* rec2sql: (recutils)Invoking rec2sql.         Recfiles to SQL.
 * mdb2rec: (recutils)Invoking mdb2rec.         MDB to recfiles.
 @end direntry
 
@@ -113,6 +115,7 @@ Advanced Topics
 * Bash Builtins::              Boosting the recutils in the shell.
 
 Reference Material
+* Library API::                Using librec from C programs.
 * Invoking the Utilities::     Exhaustive list of command line arguments.
 * Using ob-rec.el::            Invoking Recutils from Emacs Org-mode source blocks.
 * Regular Expressions::        Flavor of regexps supported in recutils.
@@ -223,6 +226,18 @@ Bash Builtins
 
 * readrec::                  Exporting the contents of records to the shell.
 
+Library API
+
+* Initialization::           Setting up and tearing down librec.
+* Parsing Rec Data::         Reading recfiles into memory.
+* Working with Databases::   Navigating record sets in a database.
+* Working with Record Sets:: Accessing records and descriptors.
+* Working with Records::     Iterating over fields in a record.
+* Working with Fields::      Getting and setting field names and values.
+* Selection Expressions API:: Filtering records programmatically.
+* Writing Rec Data::         Serializing databases back to rec format.
+* Memory Management::        Ownership conventions and cleanup.
+
 Invoking the Utilities
 
 * Invoking recinf::          Printing information about rec files.
@@ -234,6 +249,8 @@ Invoking the Utilities
 * Invoking recfmt::          Formatting records using templates.
 * Invoking csv2rec::         Converting csv data into rec data.
 * Invoking rec2csv::         Converting rec data into csv data.
+* Invoking rec2json::        Converting rec data into JSON data.
+* Invoking rec2sql::         Converting rec data into SQL statements.
 * Invoking mdb2rec::         Converting mdb files into rec files.
 
 @end detailmenu
@@ -4896,6 +4913,470 @@ figure as ``checked'', using @command{recset}, so she won't get
 pestered again the next time the
 script is run.
 
+@node Library API
+@chapter Library API
+
+@cindex librec
+@cindex C API
+@cindex programming
+This chapter documents the public C API provided by @code{librec}, the
+shared library shipped with GNU recutils.  Programs that link against
+@code{librec} can parse, query, modify, and write rec data without
+invoking the command-line utilities.
+
+To use the library, include @code{<rec.h>} and link with @code{-lrec}.
+If recutils was installed with pkg-config support, you can obtain the
+correct flags with:
+
+@example
+cc $(pkg-config --cflags recutils) -o myprog myprog.c \
+   $(pkg-config --libs recutils)
+@end example
+
+@menu
+* Initialization::           Setting up and tearing down librec.
+* Parsing Rec Data::         Reading recfiles into memory.
+* Working with Databases::   Navigating record sets in a database.
+* Working with Record Sets:: Accessing records and descriptors.
+* Working with Records::     Iterating over fields in a record.
+* Working with Fields::      Getting and setting field names and values.
+* Selection Expressions API:: Filtering records programmatically.
+* Writing Rec Data::         Serializing databases back to rec format.
+* Memory Management::        Ownership conventions and cleanup.
+@end menu
+
+@node Initialization
+@section Initialization
+
+@cindex initialization
+@cindex rec_init
+@cindex rec_fini
+Before using any librec function, the library must be initialized with
+a call to @code{rec_init}.  When the library is no longer needed, call
+@code{rec_fini} to release global resources.
+
+@deftypefun void rec_init (void)
+Initialize the library.  This function must be called before any other
+librec function.  It is safe to call it more than once.
+@end deftypefun
+
+@deftypefun void rec_fini (void)
+Finalize the library and release global resources.
+@end deftypefun
+
+A minimal program skeleton looks like:
+
+@example
+#include <rec.h>
+
+int
+main (void)
+@{
+  rec_init ();
+  /* @dots{} use librec @dots{} */
+  rec_fini ();
+  return 0;
+@}
+@end example
+
+@node Parsing Rec Data
+@section Parsing Rec Data
+
+@cindex parsing
+@cindex rec_parser_t
+The parser reads rec-formatted text from a @code{FILE *} stream or a
+memory buffer and produces in-memory data structures.
+
+@deftypefun rec_parser_t rec_parser_new (FILE *@var{in}, const char *@var{source})
+Create a parser that reads from the file stream @var{in}.  @var{source}
+is a string (typically a file name) attached to parsed elements for
+error reporting.  Returns @code{NULL} on out-of-memory.
+@end deftypefun
+
+@deftypefun rec_parser_t rec_parser_new_str (const char *@var{buffer}, const char *@var{source})
+Create a parser that reads from a null-terminated string @var{buffer}.
+Returns @code{NULL} on out-of-memory.
+@end deftypefun
+
+@deftypefun bool rec_parse_db (rec_parser_t @var{parser}, rec_db_t *@var{db})
+Parse an entire database (one or more record sets) and store it in
+@var{db}.  Returns @code{true} on success.
+@end deftypefun
+
+@deftypefun bool rec_parse_rset (rec_parser_t @var{parser}, rec_rset_t *@var{rset})
+Parse a single record set and store it in @var{rset}.  Returns
+@code{true} on success.
+@end deftypefun
+
+@deftypefun bool rec_parse_record (rec_parser_t @var{parser}, rec_record_t *@var{record})
+Parse a single record and store it in @var{record}.  Returns @code{true}
+on success.
+@end deftypefun
+
+@deftypefun bool rec_parser_eof (rec_parser_t @var{parser})
+Return @code{true} if the parser has reached the end of its input.
+@end deftypefun
+
+@deftypefun bool rec_parser_error (rec_parser_t @var{parser})
+Return @code{true} if the parser is in an error state.
+@end deftypefun
+
+@deftypefun void rec_parser_perror (rec_parser_t @var{parser}, const char *@var{fmt}, ...)
+Print a descriptive error message to standard error.  @var{fmt} is an
+optional prefix (printf-style).
+@end deftypefun
+
+@deftypefun void rec_parser_destroy (rec_parser_t @var{parser})
+Destroy a parser and free its resources.  The underlying file stream or
+buffer is @emph{not} closed or freed.
+@end deftypefun
+
+The typical pattern for parsing a file is:
+
+@example
+FILE *fp = fopen ("contacts.rec", "r");
+rec_parser_t parser = rec_parser_new (fp, "contacts.rec");
+rec_db_t db;
+
+if (rec_parse_db (parser, &db))
+  @{
+    /* @dots{} work with db @dots{} */
+    rec_db_destroy (db);
+  @}
+else
+  rec_parser_perror (parser, "contacts.rec");
+
+rec_parser_destroy (parser);
+fclose (fp);
+@end example
+
+@node Working with Databases
+@section Working with Databases
+
+@cindex database
+@cindex rec_db_t
+A database (@code{rec_db_t}) is an ordered collection of record sets.
+Each record set may be typed (identified by a @code{%rec} descriptor) or
+untyped (the default record set).
+
+@deftypefun rec_db_t rec_db_new (void)
+Create a new, empty database.  Returns @code{NULL} on out-of-memory.
+@end deftypefun
+
+@deftypefun void rec_db_destroy (rec_db_t @var{db})
+Destroy a database and all record sets it contains.
+@end deftypefun
+
+@deftypefun size_t rec_db_size (rec_db_t @var{db})
+Return the number of record sets in @var{db}.
+@end deftypefun
+
+@deftypefun rec_rset_t rec_db_get_rset (rec_db_t @var{db}, size_t @var{position})
+Return the record set at @var{position} (zero-based).  Returns
+@code{NULL} if @var{position} is out of range.
+@end deftypefun
+
+@deftypefun rec_rset_t rec_db_get_rset_by_type (rec_db_t @var{db}, const char *@var{type})
+Return the record set whose @code{%rec} type matches @var{type}.  Pass
+@code{NULL} to get the default (untyped) record set.  Returns
+@code{NULL} if no match is found.
+@end deftypefun
+
+@deftypefun bool rec_db_insert_rset (rec_db_t @var{db}, rec_rset_t @var{rset}, size_t @var{position})
+Insert @var{rset} into @var{db} at @var{position}.  Returns @code{true}
+on success.
+@end deftypefun
+
+@deftypefun bool rec_db_remove_rset (rec_db_t @var{db}, size_t @var{position})
+Remove the record set at @var{position}.  Returns @code{true} if a
+record set was removed.
+@end deftypefun
+
+For high-level operations such as querying or modifying records across
+an entire database, see @code{rec_db_query}, @code{rec_db_insert},
+@code{rec_db_delete}, and @code{rec_db_set}, which mirror the
+functionality of the @command{recsel}, @command{recins},
+@command{recdel}, and @command{recset} utilities.
+
+@node Working with Record Sets
+@section Working with Record Sets
+
+@cindex record set
+@cindex rec_rset_t
+A record set (@code{rec_rset_t}) holds an ordered collection of records
+and comments, optionally preceded by a record descriptor.
+
+@deftypefun rec_rset_t rec_rset_new (void)
+Create an empty record set.
+@end deftypefun
+
+@deftypefun void rec_rset_destroy (rec_rset_t @var{rset})
+Destroy a record set and all its contents.
+@end deftypefun
+
+@deftypefun rec_rset_t rec_rset_dup (rec_rset_t @var{rset})
+Deep-copy a record set, including its descriptor, type registry, and
+all records.
+@end deftypefun
+
+@deftypefun size_t rec_rset_num_records (rec_rset_t @var{rset})
+Return the number of records in @var{rset}.
+@end deftypefun
+
+@deftypefun {char *} rec_rset_type (rec_rset_t @var{rset})
+Return the type name from the record descriptor (@code{%rec} field), or
+@code{NULL} if there is no descriptor.
+@end deftypefun
+
+@deftypefun rec_record_t rec_rset_descriptor (rec_rset_t @var{rset})
+Return the descriptor record, or @code{NULL} if there is none.
+@end deftypefun
+
+@deftypefun void rec_rset_set_descriptor (rec_rset_t @var{rset}, rec_record_t @var{record})
+Set a new record descriptor.  This rebuilds the type registry, field
+properties, and constraint caches.  Pass @code{NULL} to remove the
+descriptor.
+@end deftypefun
+
+To iterate over the records in a record set, use the multi-set
+iterator:
+
+@example
+rec_record_t record;
+rec_mset_iterator_t iter;
+
+iter = rec_mset_iterator (rec_rset_mset (rset));
+while (rec_mset_iterator_next (&iter, MSET_RECORD,
+                                (const void **) &record, NULL))
+  @{
+    /* @dots{} process record @dots{} */
+  @}
+rec_mset_iterator_free (&iter);
+@end example
+
+@node Working with Records
+@section Working with Records
+
+@cindex record
+@cindex rec_record_t
+A record (@code{rec_record_t}) is an ordered collection of fields and
+comments.
+
+@deftypefun rec_record_t rec_record_new (void)
+Create a new, empty record.
+@end deftypefun
+
+@deftypefun void rec_record_destroy (rec_record_t @var{record})
+Destroy a record and all fields and comments it contains.
+@end deftypefun
+
+@deftypefun rec_record_t rec_record_dup (rec_record_t @var{record})
+Deep-copy a record.
+@end deftypefun
+
+@deftypefun size_t rec_record_num_fields (rec_record_t @var{record})
+Return the number of fields in @var{record}.
+@end deftypefun
+
+@deftypefun bool rec_record_field_p (rec_record_t @var{record}, const char *@var{field_name})
+Return @code{true} if @var{record} contains at least one field named
+@var{field_name}.
+@end deftypefun
+
+@deftypefun size_t rec_record_get_num_fields_by_name (rec_record_t @var{record}, const char *@var{field_name})
+Return the number of fields named @var{field_name} in @var{record}.
+Rec format allows multiple fields with the same name.
+@end deftypefun
+
+@deftypefun rec_field_t rec_record_get_field_by_name (rec_record_t @var{record}, const char *@var{field_name}, size_t @var{n})
+Return the @var{n}th field (zero-based) named @var{field_name}, or
+@code{NULL} if there are fewer than @var{n}+1 such fields.
+@end deftypefun
+
+To iterate over all fields in a record:
+
+@example
+rec_field_t field;
+rec_mset_iterator_t iter;
+
+iter = rec_mset_iterator (rec_record_mset (record));
+while (rec_mset_iterator_next (&iter, MSET_FIELD,
+                                (const void **) &field, NULL))
+  @{
+    printf ("%s: %s\n",
+            rec_field_name (field),
+            rec_field_value (field));
+  @}
+rec_mset_iterator_free (&iter);
+@end example
+
+@node Working with Fields
+@section Working with Fields
+
+@cindex field
+@cindex rec_field_t
+A field (@code{rec_field_t}) is a name--value pair.  Both the name and
+value are strings.
+
+@deftypefun rec_field_t rec_field_new (const char *@var{name}, const char *@var{value})
+Create a new field.  The name and value strings are copied.
+@end deftypefun
+
+@deftypefun void rec_field_destroy (rec_field_t @var{field})
+Destroy a field.
+@end deftypefun
+
+@deftypefun {const char *} rec_field_name (rec_field_t @var{field})
+Return the name of @var{field}.
+@end deftypefun
+
+@deftypefun bool rec_field_set_name (rec_field_t @var{field}, const char *@var{name})
+Set the name of @var{field}.  Returns @code{false} on out-of-memory.
+@end deftypefun
+
+@deftypefun {const char *} rec_field_value (rec_field_t @var{field})
+Return the value of @var{field}.  The returned string may be empty but
+is never @code{NULL}.
+@end deftypefun
+
+@deftypefun bool rec_field_set_value (rec_field_t @var{field}, const char *@var{value})
+Set the value of @var{field}.  Returns @code{false} on out-of-memory.
+@end deftypefun
+
+@deftypefun rec_field_t rec_field_dup (rec_field_t @var{field})
+Deep-copy a field.
+@end deftypefun
+
+@node Selection Expressions API
+@section Selection Expressions
+
+@cindex selection expression
+@cindex rec_sex_t
+Selection expressions let you filter records programmatically, using the
+same expression language accepted by @command{recsel -e}.
+
+@deftypefun rec_sex_t rec_sex_new (bool @var{case_insensitive})
+Create a new selection expression object.  If @var{case_insensitive}
+is @code{true}, string comparisons will ignore case.
+@end deftypefun
+
+@deftypefun bool rec_sex_compile (rec_sex_t @var{sex}, const char *@var{expr})
+Compile the expression string @var{expr}.  Returns @code{false} if
+@var{expr} contains a syntax error.
+@end deftypefun
+
+@deftypefun bool rec_sex_eval (rec_sex_t @var{sex}, rec_record_t @var{record}, bool *@var{status})
+Evaluate the compiled expression against @var{record}.  The boolean
+result is stored in @var{status} and also returned directly.
+@end deftypefun
+
+@deftypefun void rec_sex_destroy (rec_sex_t @var{sex})
+Destroy a selection expression and free its resources.
+@end deftypefun
+
+Example: selecting records where @code{Age > 30}:
+
+@example
+rec_sex_t sex = rec_sex_new (false);
+rec_sex_compile (sex, "Age > 30");
+
+rec_mset_iterator_t iter;
+rec_record_t record;
+bool status;
+
+iter = rec_mset_iterator (rec_rset_mset (rset));
+while (rec_mset_iterator_next (&iter, MSET_RECORD,
+                                (const void **) &record, NULL))
+  @{
+    if (rec_sex_eval (sex, record, &status) && status)
+      @{
+        /* @dots{} record matches @dots{} */
+      @}
+  @}
+rec_mset_iterator_free (&iter);
+rec_sex_destroy (sex);
+@end example
+
+@node Writing Rec Data
+@section Writing Rec Data
+
+@cindex writing
+@cindex rec_writer_t
+The writer serializes in-memory data structures back to rec format (or
+other output formats).
+
+@deftypefun rec_writer_t rec_writer_new (FILE *@var{out})
+Create a writer that outputs to the file stream @var{out}.  Returns
+@code{NULL} on out-of-memory.
+@end deftypefun
+
+@deftypefun rec_writer_t rec_writer_new_str (char **@var{str}, size_t *@var{str_size})
+Create a writer that outputs to a dynamically allocated string.  On
+success, @var{str} and @var{str_size} are updated after each write
+operation.
+@end deftypefun
+
+@deftypefun bool rec_write_db (rec_writer_t @var{writer}, rec_db_t @var{db})
+Write an entire database.  Returns @code{false} on I/O error.
+@end deftypefun
+
+@deftypefun bool rec_write_rset (rec_writer_t @var{writer}, rec_rset_t @var{rset})
+Write a record set.
+@end deftypefun
+
+@deftypefun bool rec_write_record (rec_writer_t @var{writer}, rec_record_t @var{record})
+Write a record.
+@end deftypefun
+
+@deftypefun bool rec_write_field (rec_writer_t @var{writer}, rec_field_t @var{field})
+Write a field.
+@end deftypefun
+
+@deftypefun void rec_writer_destroy (rec_writer_t @var{writer})
+Destroy a writer.  The underlying file stream is @emph{not} closed.
+@end deftypefun
+
+@deftypefun void rec_writer_set_mode (rec_writer_t @var{writer}, enum rec_writer_mode_e @var{mode})
+Set the output mode.  Supported modes are @code{REC_WRITER_NORMAL} (rec
+format), @code{REC_WRITER_VALUES} (values only),
+@code{REC_WRITER_VALUES_ROW} (single-row values), and
+@code{REC_WRITER_SEXP} (S-expressions).
+@end deftypefun
+
+@node Memory Management
+@section Memory Management
+
+@cindex memory management
+@cindex ownership
+All librec objects follow a consistent ownership model:
+
+@itemize @bullet
+@item
+Constructors (@code{_new} functions) return a freshly allocated object
+that the caller owns.  The caller is responsible for eventually calling
+the corresponding @code{_destroy} function.
+
+@item
+Getters that return @code{const char *} (such as @code{rec_field_name}
+and @code{rec_field_value}) return pointers into the object's internal
+storage.  The caller must @emph{not} free these pointers, and they
+become invalid after the owning object is destroyed or the value is
+changed.
+
+@item
+Setters (such as @code{rec_field_set_name}) copy the provided string.
+The caller retains ownership of the original.
+
+@item
+@code{_dup} functions perform deep copies.  The caller owns the
+returned copy independently of the original.
+
+@item
+When a database is destroyed with @code{rec_db_destroy}, all record
+sets, records, fields, and comments it contains are also destroyed.
+Do not hold pointers into a database after destroying it.
+@end itemize
+
 @node Invoking the Utilities
 @chapter Invoking the Utilities
 
@@ -4925,6 +5406,8 @@ operands even if they begin with @option{-}.  For example,
 * Invoking recfmt::          Formatting records using templates.
 * Invoking csv2rec::         Converting csv data into rec data.
 * Invoking rec2csv::         Converting rec data into csv data.
+* Invoking rec2json::        Converting rec data into JSON data.
+* Invoking rec2sql::         Converting rec data into SQL statements.
 * Invoking mdb2rec::         Converting mdb files into rec files.
 @end menu
 
@@ -5520,6 +6003,70 @@ are specified in the corresponding record descriptor with
 @itemx --delim=@var{char}
 Use @var{char} as the delimiter character separating fields in the
 output.  Defaults to @code{,}.
+@end table
+
+@node Invoking rec2json
+@section Invoking rec2json
+@cindex @command{rec2json}
+@cindex json
+
+@command{rec2json} reads rec data and prints it as JSON.  Synopsis:
+
+@example
+rec2json [@var{option}]@dots{} [@var{rec_file}]
+@end example
+
+For single-type files the output is a JSON array of objects.  For
+multi-type files the output is a JSON object keyed by record type name,
+with each value being an array of record objects.  Multi-valued fields
+(fields appearing more than once in a record) become JSON arrays.
+
+In addition to the common options described earlier (@pxref{Common
+Options}) the program accepts the following options.
+
+@table @samp
+@item -t @var{type}
+@itemx --type=@var{type}
+Type of the records to convert.
+@item -S
+@itemx --sort=@var{fields}
+Sort the output by the comma-separated list of field names
+@var{fields}.
+@end table
+
+@node Invoking rec2sql
+@section Invoking rec2sql
+@cindex @command{rec2sql}
+@cindex sql
+
+@command{rec2sql} reads rec data and prints SQL @code{INSERT}
+statements.  Synopsis:
+
+@example
+rec2sql [@var{option}]@dots{} [@var{rec_file}]
+@end example
+
+Each record produces one @code{INSERT INTO} statement.  The table name
+defaults to the record type name (or @code{data} for untyped records)
+and can be overridden with @option{-T}.  Multi-valued fields are
+concatenated with newline separators into a single SQL string value.
+Field names and table names are quoted with double quotes; string values
+use single-quote escaping.
+
+In addition to the common options described earlier (@pxref{Common
+Options}) the program accepts the following options.
+
+@table @samp
+@item -t @var{type}
+@itemx --type=@var{type}
+Type of the records to convert.
+@item -T @var{name}
+@itemx --table=@var{name}
+Use @var{name} as the SQL table name instead of the record type.
+@item -S
+@itemx --sort=@var{fields}
+Sort the output by the comma-separated list of field names
+@var{fields}.
 @end table
 
 @node Invoking mdb2rec

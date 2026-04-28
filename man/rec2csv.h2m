@@ -1,0 +1,19 @@
+[EXAMPLES]
+Convert all records to CSV:
+
+  rec2csv contacts.rec
+
+Convert only a specific record type:
+
+  rec2csv -t Task todo.rec
+
+Sort the output by a field:
+
+  rec2csv -S Name contacts.rec
+
+[SEE ALSO]
+.BR csv2rec (1),
+.BR rec2json (1),
+.BR recsel (1),
+.BR recinf (1),
+.BR recfix (1).

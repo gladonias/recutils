@@ -1,0 +1,31 @@
+[EXAMPLES]
+Print all records from a file:
+
+  recsel contacts.rec
+
+Print only Email fields for people in New York:
+
+  recsel -e "City = 'New York'" -p Email contacts.rec
+
+Count the number of Task records:
+
+  recsel -t Task -c todo.rec
+
+Print records 0 through 4, sorted by Name:
+
+  recsel -n 0-4 -S Name contacts.rec
+
+Perform a join on a foreign key field:
+
+  recsel -t Invoice -j Customer billing.rec
+
+[SEE ALSO]
+.BR recins (1),
+.BR recdel (1),
+.BR recset (1),
+.BR recinf (1),
+.BR recfix (1),
+.BR recfmt (1),
+.BR rec2csv (1),
+.BR rec2json (1),
+.BR csv2rec (1).
