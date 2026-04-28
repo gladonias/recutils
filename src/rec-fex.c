@@ -588,6 +588,30 @@ rec_fex_elem_rewrite_to (rec_fex_elem_t elem)
   return elem->rewrite_to;
 }
 
+static int
+rec_fex_elem_cmp (rec_fex_elem_t a, rec_fex_elem_t b)
+{
+  if (a->min != b->min)
+    {
+      if (a->min == -1)
+        return -1;
+      if (b->min == -1)
+        return 1;
+      return (a->min < b->min) ? -1 : 1;
+    }
+
+  if (a->max != b->max)
+    {
+      if (a->max == -1)
+        return -1;
+      if (b->max == -1)
+        return 1;
+      return (a->max < b->max) ? -1 : 1;
+    }
+
+  return 0;
+}
+
 void
 rec_fex_sort (rec_fex_t fex)
 {
@@ -595,7 +619,6 @@ rec_fex_sort (rec_fex_t fex)
   rec_fex_elem_t aux;
   int i, j;
 
-  /* XXX: this code only works when 'max' is not specified.  */
   for (i = 1; i < fex->num_elems; i++)
     {
       aux = fex->elems[i];
@@ -604,8 +627,7 @@ rec_fex_sort (rec_fex_t fex)
 
       while (!done)
        {
-         /* If elems[j] > aux  */
-         if ((fex->elems[j]->min == -1) || (fex->elems[j]->min > aux->min))
+         if (rec_fex_elem_cmp (fex->elems[j], aux) > 0)
            {
              fex->elems[j + 1] = fex->elems[j];
              j = j - 1;
