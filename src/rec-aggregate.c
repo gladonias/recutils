@@ -39,7 +39,7 @@
  * Data structures.
  */
 
-#define MAX_FUNCTIONS 40
+#define INITIAL_CAPACITY 8
 
 struct rec_aggregate_reg_elem_s
 {
@@ -49,8 +49,9 @@ struct rec_aggregate_reg_elem_s
 
 struct rec_aggregate_reg_s
 {
-  struct rec_aggregate_reg_elem_s functions[MAX_FUNCTIONS];
+  struct rec_aggregate_reg_elem_s *functions;
   size_t num_functions;
+  size_t capacity;
 };
 
 /* Static functions defined in this file.  */
@@ -117,7 +118,17 @@ rec_aggregate_reg_new (void)
 
   new = malloc (sizeof (struct rec_aggregate_reg_s));
   if (new)
-    new->num_functions = 0;
+    {
+      new->functions = malloc (INITIAL_CAPACITY
+                               * sizeof (struct rec_aggregate_reg_elem_s));
+      if (!new->functions)
+        {
+          free (new);
+          return NULL;
+        }
+      new->num_functions = 0;
+      new->capacity = INITIAL_CAPACITY;
+    }
 
   return new;
 }
@@ -131,6 +142,7 @@ rec_aggregate_reg_destroy (rec_aggregate_reg_t func_reg)
 
       for (i = 0; i < func_reg->num_functions; i++)
         free (func_reg->functions[i].name);
+      free (func_reg->functions);
       free (func_reg);
     }
 }
@@ -154,13 +166,21 @@ rec_aggregate_reg_add (rec_aggregate_reg_t func_reg,
 
   if (!function_replaced)
     {
-      /* Insert the function into a new entry in the registry.  */
-
-      if (func_reg->num_functions == MAX_FUNCTIONS)
-        /* FIXME: this is crappy as hell.  */
-        return false;
+      if (func_reg->num_functions == func_reg->capacity)
+        {
+          size_t new_cap = func_reg->capacity * 2;
+          struct rec_aggregate_reg_elem_s *tmp
+            = realloc (func_reg->functions,
+                       new_cap * sizeof (struct rec_aggregate_reg_elem_s));
+          if (!tmp)
+            return false;
+          func_reg->functions = tmp;
+          func_reg->capacity = new_cap;
+        }
 
       func_reg->functions[func_reg->num_functions].name = strdup (name);
+      if (!func_reg->functions[func_reg->num_functions].name)
+        return false;
       func_reg->functions[func_reg->num_functions].function = function;
       func_reg->num_functions++;
     }
