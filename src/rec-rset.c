@@ -1030,42 +1030,40 @@ rec_rset_destroy (rec_rset_t rset)
 rec_rset_t
 rec_rset_dup (rec_rset_t rset)
 {
-  rec_rset_t new = NULL;
+  rec_rset_t new = rec_rset_new ();
+  if (!new)
+    return NULL;
 
-  new = malloc (sizeof (struct rec_rset_s));
-  if (new)
+  new->min_size = rset->min_size;
+  new->max_size = rset->max_size;
+
+  if (rset->order_by_fields)
     {
-      rec_rset_init (new);
-
-      new->record_type = rset->record_type;
-      new->comment_type = rset->comment_type;
-      new->mset = NULL;
-      new->min_size = rset->min_size;
-      new->max_size = rset->max_size;
-      /* XXX: make copies of the following structures.  */
-      new->type_reg = NULL;
-      new->field_props = NULL;
-      new->constraints = NULL;
-      new->num_constraints = 0;
-
-      if (rset->order_by_fields)
+      new->order_by_fields = rec_fex_dup (rset->order_by_fields);
+      if (!new->order_by_fields)
         {
-          new->order_by_fields = rec_fex_dup (rset->order_by_fields);
-          if (!new->order_by_fields)
-            {
-              /* Out of memory.  */
-              rec_rset_destroy (new);
-              return NULL;
-            }
+          rec_rset_destroy (new);
+          return NULL;
         }
     }
 
+  rec_mset_destroy (new->mset);
   new->mset = rec_mset_dup (rset->mset);
   if (!new->mset)
     {
-      /* Out of memory.  */
       rec_rset_destroy (new);
       return NULL;
+    }
+
+  if (rset->descriptor)
+    {
+      rec_record_t desc_dup = rec_record_dup (rset->descriptor);
+      if (!desc_dup)
+        {
+          rec_rset_destroy (new);
+          return NULL;
+        }
+      rec_rset_set_descriptor (new, desc_dup);
     }
 
   return new;
