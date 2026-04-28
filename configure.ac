@@ -275,7 +275,8 @@ AC_CONFIG_FILES(Makefile
                 torture/utils/Makefile
                 torture/utils/config.sh
                 man/Makefile
-                etc/Makefile)
+                etc/Makefile
+                recutils.pc)
 AC_OUTPUT
 
 dnl Report warnings

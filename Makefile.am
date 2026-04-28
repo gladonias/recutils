@@ -19,6 +19,9 @@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = lib libcsv src utils bash doc po man torture etc
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = recutils.pc
+
 perf:
 	$(MAKE) -C torture/utils perf
 
