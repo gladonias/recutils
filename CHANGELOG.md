@@ -4,7 +4,36 @@ All notable changes to GNU recutils will be documented in this file.
 
 For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
 
-## [1.9.3] - 2026-04-27
+## [1.9.3] - 2026-04-28
+
+### Added
+
+- **`rec2json` converter**: New utility to export rec data as JSON.
+  Outputs a JSON array for single-type files or a JSON object keyed by
+  record type for multi-type files.  Multi-valued fields become JSON
+  arrays.  Supports `-t`/`--type` and `-S`/`--sort`.
+
+- **pkg-config support**: A `recutils.pc` file is now installed to
+  `$(libdir)/pkgconfig`, allowing `pkg-config --cflags recutils` and
+  `pkg-config --libs recutils`.
+
+### Fixed
+
+- Fix `rec_rset_dup()` losing type registry, field properties, and
+  constraints.  The duplicate now properly rebuilds all derived state
+  from a deep-copied descriptor record.  Also fixes a NULL dereference
+  when the initial allocation fails.
+  (rec-rset.c)
+
+- Replace fixed-size aggregate function registry (`MAX_FUNCTIONS=40`)
+  with a dynamically growing array.  Previously, exceeding 40 registered
+  aggregates silently failed.
+  (rec-aggregate.c)
+
+- Fix `rec_fex_sort()` producing wrong order for range-based field
+  expressions (e.g. `Field[2-5]`).  The sort now compares both min and
+  max indices.
+  (rec-fex.c)
 
 ### Security
 
