@@ -706,12 +706,6 @@ before the type specification\n"),
                   if (rec_parse_regexp (&q, "^" REC_TYPE_NAME_RE "[ \t\n]*$",
                                         NULL))
                     {
-                      /* The named type shall exist in the record set
-                         type registry.
-
-                         XXX: but this is probably a warning rather
-                         than an error.  */
-
                       rec_parse_regexp (&p, "^" REC_TYPE_NAME_RE, &type_name);
                       if (!rec_type_reg_get (rec_rset_get_type_reg (rset), type_name))
                         {
@@ -759,12 +753,6 @@ specification\n"),
                   if (rec_parse_regexp (&q, "^" REC_TYPE_NAME_RE "[ \t\n]*$",
                                         NULL))
                     {
-                      /* The named type shall exist in the record set
-                         type registry.
-
-                         XXX: but this is probably a warning rather
-                         than an error.  */
-
                       rec_parse_regexp (&p, "^" REC_TYPE_NAME_RE, &type_name);
                       if (!rec_type_reg_get (rec_rset_get_type_reg (rset), type_name))
                         {

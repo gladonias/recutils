@@ -25,7 +25,8 @@ man_MANS = recdel.1 \
            csv2rec.1 \
            rec2csv.1 \
            rec2json.1 \
-           rec2sql.1
+           rec2sql.1 \
+           rec2xml.1
 
 if COMPILE_MDB2REC
 man_MANS += mdb2rec.1
@@ -34,7 +35,8 @@ endif
 H2M_FILES = recsel.h2m recins.h2m recdel.h2m recset.h2m recinf.h2m \
             recfix.h2m recfmt.h2m rec2csv.h2m csv2rec.h2m mdb2rec.h2m \
             rec2json.h2m \
-            rec2sql.h2m
+            rec2sql.h2m \
+            rec2xml.h2m
 
 EXTRA_DIST = $(man_MANS) $(H2M_FILES)
 MAINTAINERCLEANFILES = $(man_MANS)
@@ -56,6 +58,9 @@ rec2json.1: $(top_srcdir)/utils/rec2json.c $(common_mandeps) $(srcdir)/rec2json.
 
 rec2sql.1: $(top_srcdir)/utils/rec2sql.c $(common_mandeps) $(srcdir)/rec2sql.h2m
 	$(HELP2MAN) -p recutils --name="rec to sql converter" --include=$(srcdir)/rec2sql.h2m $(builddir)/../utils/rec2sql -o $@
+
+rec2xml.1: $(top_srcdir)/utils/rec2xml.c $(common_mandeps) $(srcdir)/rec2xml.h2m
+	$(HELP2MAN) -p recutils --name="rec to xml converter" --include=$(srcdir)/rec2xml.h2m $(builddir)/../utils/rec2xml -o $@
 
 csv2rec.1: $(top_srcdir)/utils/csv2rec.c $(common_mandeps) $(srcdir)/csv2rec.h2m
 	$(HELP2MAN) -p recutils --name="csv to rec converter" --include=$(srcdir)/csv2rec.h2m $(builddir)/../utils/csv2rec -o $@

@@ -1,0 +1,21 @@
+[EXAMPLES]
+Convert all records to XML:
+
+  rec2xml contacts.rec
+
+Convert only a specific record type:
+
+  rec2xml -t Task todo.rec
+
+Sort the output by a field:
+
+  rec2xml -S Name contacts.rec
+
+[SEE ALSO]
+.BR rec2json (1),
+.BR rec2csv (1),
+.BR rec2sql (1),
+.BR csv2rec (1),
+.BR recsel (1),
+.BR recinf (1),
+.BR recfix (1).

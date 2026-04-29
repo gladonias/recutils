@@ -66,6 +66,7 @@ Documentation License''.
 * rec2csv: (recutils)Invoking rec2csv.         Recfiles to CSV.
 * rec2json: (recutils)Invoking rec2json.       Recfiles to JSON.
 * rec2sql: (recutils)Invoking rec2sql.         Recfiles to SQL.
+* rec2xml: (recutils)Invoking rec2xml.         Recfiles to XML.
 * mdb2rec: (recutils)Invoking mdb2rec.         MDB to recfiles.
 @end direntry
 
@@ -251,6 +252,7 @@ Invoking the Utilities
 * Invoking rec2csv::         Converting rec data into csv data.
 * Invoking rec2json::        Converting rec data into JSON data.
 * Invoking rec2sql::         Converting rec data into SQL statements.
+* Invoking rec2xml::         Converting rec data into XML data.
 * Invoking mdb2rec::         Converting mdb files into rec files.
 
 @end detailmenu
@@ -5408,6 +5410,7 @@ operands even if they begin with @option{-}.  For example,
 * Invoking rec2csv::         Converting rec data into csv data.
 * Invoking rec2json::        Converting rec data into JSON data.
 * Invoking rec2sql::         Converting rec data into SQL statements.
+* Invoking rec2xml::         Converting rec data into XML data.
 * Invoking mdb2rec::         Converting mdb files into rec files.
 @end menu
 
@@ -6063,6 +6066,37 @@ Type of the records to convert.
 @item -T @var{name}
 @itemx --table=@var{name}
 Use @var{name} as the SQL table name instead of the record type.
+@item -S
+@itemx --sort=@var{fields}
+Sort the output by the comma-separated list of field names
+@var{fields}.
+@end table
+
+@node Invoking rec2xml
+@section Invoking rec2xml
+@cindex @command{rec2xml}
+@cindex xml
+
+@command{rec2xml} reads rec data and prints it as XML.  Synopsis:
+
+@example
+rec2xml [@var{option}]@dots{} [@var{rec_file}]
+@end example
+
+The output is a well-formed XML document.  Each record set is wrapped in
+a @code{<recordset>} element (with an optional @code{type} attribute),
+and each record is a @code{<record>} element containing @code{<field>}
+elements.  Multi-valued fields (repeated field names) produce multiple
+@code{<field>} elements.  Special characters (@code{&}, @code{<},
+@code{>}, @code{"}, @code{'}) are escaped according to XML rules.
+
+In addition to the common options described earlier (@pxref{Common
+Options}) the program accepts the following options.
+
+@table @samp
+@item -t @var{type}
+@itemx --type=@var{type}
+Type of the records to convert.
 @item -S
 @itemx --sort=@var{fields}
 Sort the output by the comma-separated list of field names

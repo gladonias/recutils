@@ -25,6 +25,7 @@ TESTS = recinf.sh \
         rec2csv.sh \
         rec2json.sh \
         rec2sql.sh \
+        rec2xml.sh \
         csv2rec.sh
 EXTRA_DIST = $(TESTS) testutils.sh
 TESTS_ENVIRONMENT = top_srcdir=$(top_srcdir) builddir=$(builddir) \

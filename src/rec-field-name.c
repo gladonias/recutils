@@ -105,6 +105,13 @@ bool
 rec_field_name_equal_p (const char *name1,
                         const char *name2)
 {
-  /* TODO: 'foo' and 'foo:' denote the same field name.  */
-  return (strcmp (name1, name2) == 0);
+  size_t len1 = strlen (name1);
+  size_t len2 = strlen (name2);
+
+  if (len1 > 0 && name1[len1 - 1] == ':')
+    len1--;
+  if (len2 > 0 && name2[len2 - 1] == ':')
+    len2--;
+
+  return (len1 == len2 && strncmp (name1, name2, len1) == 0);
 }

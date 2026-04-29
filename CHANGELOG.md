@@ -36,12 +36,28 @@ For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
   of which optional features (encryption, UUID, remote descriptors,
   bash builtins, mdb2rec) are enabled or disabled.
 
+- **`rec2xml` converter**: New utility to export rec data as XML.
+  Outputs a well-formed XML document with `<recordset>`, `<record>`,
+  and `<field>` elements.  Special characters are properly escaped.
+  Supports `-t`/`--type` and `-S`/`--sort`.
+
 - **Test coverage for new utilities**: System tests added for
-  `rec2json` (7 tests) and `rec2sql` (7 tests) covering basic
-  output, multi-valued fields, type filtering, escaping, and edge
-  cases.
+  `rec2json` (7 tests), `rec2sql` (7 tests), and `rec2xml` (6 tests)
+  covering basic output, multi-valued fields, type filtering, escaping,
+  and edge cases.
 
 ### Fixed
+
+- Remove stale `XXX` comments in `rec_int_check_rset()` that
+  speculated type-reference errors should be warnings.  The existing
+  behavior (treating undefined type references as errors) is correct
+  and validated by the test suite.
+  (rec-int.c)
+
+- Fix `rec_field_name_equal_p()` to treat trailing colons as optional:
+  `"Name"` and `"Name:"` now compare as equal, matching the rec format
+  specification.
+  (rec-field-name.c)
 
 - Fix `rec_rset_dup()` losing type registry, field properties, and
   constraints.  The duplicate now properly rebuilds all derived state

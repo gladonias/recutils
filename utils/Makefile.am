@@ -24,7 +24,7 @@ else
 endif
 
 bin_PROGRAMS = recinf recsel recins recdel recset recfix recfmt \
-               csv2rec rec2csv rec2json rec2sql $(MDB2REC)
+               csv2rec rec2csv rec2json rec2sql rec2xml $(MDB2REC)
 
 COMMONSRC = recutl.h recutl.c
 COMMONLIBS = $(top_builddir)/lib/librecutils.la $(top_builddir)/src/librec.la
@@ -88,6 +88,10 @@ rec2json_LDADD = $(COMMONLIBS)
 rec2sql_SOURCES = $(COMMONSRC) \
                   rec2sql.c
 rec2sql_LDADD = $(COMMONLIBS)
+
+rec2xml_SOURCES = $(COMMONSRC) \
+                  rec2xml.c
+rec2xml_LDADD = $(COMMONLIBS)
 
 mdb2rec_SOURCES = $(COMMONSRC) \
                   mdb2rec.c
