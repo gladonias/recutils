@@ -7,6 +7,18 @@ standard Unix tools like `grep`, `sed`, and version control systems.
 
 Homepage: <https://www.gnu.org/software/recutils/>
 
+This repository was forked from the official GNU recutils repository on
+[Savannah](https://savannah.gnu.org/git/?group=recutils). The fork
+point is commit `0e4c96c` (version 1.9, post-release), which
+corresponds to the state of the upstream master branch at the time of
+forking.
+
+All changes after that commit (version 1.9.1 onward) were implemented
+with the assistance of an AI coding assistant
+([Claude Code](https://claude.ai/claude-code) by Anthropic). See
+[CHANGELOG.md](CHANGELOG.md) for a detailed list of fixes and
+improvements.
+
 ## Tools
 
 | Command    | Description                                      |
@@ -213,20 +225,6 @@ For complete documentation, see the [GNU recutils manual](https://www.gnu.org/so
 
 - **Emacs rec-mode** is maintained as a separate package (available via
   GNU ELPA) and is not included in this repository.
-
-## Fork information
-
-This repository was forked from the official GNU recutils repository on
-[Savannah](https://savannah.gnu.org/git/?group=recutils). The fork
-point is commit `0e4c96c` (version 1.9, post-release), which
-corresponds to the state of the upstream master branch at the time of
-forking.
-
-All changes after that commit (version 1.9.1 onward) were implemented
-with the assistance of an AI coding assistant
-([Claude Code](https://claude.ai/claude-code) by Anthropic). See
-[CHANGELOG.md](CHANGELOG.md) for a detailed list of fixes and
-improvements.
 
 ## License
 
