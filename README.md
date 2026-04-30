@@ -32,6 +32,11 @@ improvements.
 | `recfmt`   | Format records using a template                   |
 | `csv2rec`  | Convert CSV data to rec format                    |
 | `rec2csv`  | Convert rec data to CSV format                    |
+| `json2rec` | Convert JSON data to rec format                   |
+| `rec2json` | Convert rec data to JSON format                   |
+| `xml2rec`  | Convert XML (recdata format) to rec format        |
+| `rec2xml`  | Convert rec data to XML format                    |
+| `rec2sql`  | Convert rec data to SQL INSERT statements         |
 | `mdb2rec`  | Convert Microsoft Access databases to rec format  |
 
 ## Installation

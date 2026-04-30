@@ -4,9 +4,22 @@ All notable changes to GNU recutils will be documented in this file.
 
 For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
 
-## [1.9.3] - 2026-04-28
+## [1.9.3] - 2026-04-30
 
 ### Added
+
+- **`json2rec` converter**: New utility to convert JSON data to rec
+  format.  Accepts a JSON array of objects (single record set) or a
+  JSON object with named arrays (typed record sets).  JSON arrays in
+  field values become multi-valued rec fields.  Includes a
+  self-contained recursive-descent JSON parser with no external
+  dependencies.  Supports `-t`/`--type` to override the record type.
+
+- **`xml2rec` converter**: New utility to convert XML data (in the
+  recdata format produced by `rec2xml`) back to rec format.  Handles
+  typed and untyped record sets, multi-valued fields, and XML entity
+  unescaping.  Includes a self-contained XML parser for the recdata
+  schema.  Supports `-t`/`--type` to override the record type.
 
 - **`rec2json` converter**: New utility to export rec data as JSON.
   Outputs a JSON array for single-type files or a JSON object keyed by
@@ -30,7 +43,7 @@ For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
 
 - **Man page improvements**: All man pages now include EXAMPLES and
   cross-referenced SEE ALSO sections via help2man `--include` files.
-  Man pages added for `rec2json` and `rec2sql`.
+  Man pages added for all conversion utilities.
 
 - **Configure feature summary**: `./configure` now prints a summary
   of which optional features (encryption, UUID, remote descriptors,
@@ -42,11 +55,26 @@ For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
   Supports `-t`/`--type` and `-S`/`--sort`.
 
 - **Test coverage for new utilities**: System tests added for
-  `rec2json` (7 tests), `rec2sql` (7 tests), and `rec2xml` (6 tests)
-  covering basic output, multi-valued fields, type filtering, escaping,
-  and edge cases.
+  `json2rec` (8 tests), `xml2rec` (6 tests), `rec2json` (7 tests),
+  `rec2sql` (7 tests), and `rec2xml` (6 tests) covering basic output,
+  multi-valued fields, type filtering, escaping, and edge cases.
 
 ### Fixed
+
+- Fix `rec2json` outputting a bare newline for empty input instead of
+  valid JSON `[]`.  The empty-input test now expects `[]`.
+  (rec2json.c)
+
+- Fix `csv2rec` silently dropping the last record when input lacks a
+  trailing newline.  Added missing `csv_fini()`/`csv_free()` calls to
+  flush the libcsv parser after all data has been read.
+  (csv2rec.c)
+
+- Remove unreachable dead code block in `csv2rec` field callback that
+  contained swapped `printf` format arguments.  The guard at line 226
+  already handled the error condition, making the inner check at
+  line 239 impossible to reach.
+  (csv2rec.c)
 
 - Remove stale `XXX` comments in `rec_int_check_rset()` that
   speculated type-reference errors should be warnings.  The existing

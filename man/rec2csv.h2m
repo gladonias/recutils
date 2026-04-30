@@ -13,7 +13,10 @@ Sort the output by a field:
 
 [SEE ALSO]
 .BR csv2rec (1),
+.BR json2rec (1),
+.BR xml2rec (1),
 .BR rec2json (1),
+.BR rec2xml (1),
 .BR recsel (1),
 .BR recinf (1),
 .BR recfix (1).
