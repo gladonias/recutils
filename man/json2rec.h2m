@@ -1,0 +1,19 @@
+[EXAMPLES]
+Convert a JSON array of objects to rec format:
+
+  json2rec contacts.json
+
+Convert JSON with a specific record type:
+
+  json2rec -t Contact contacts.json
+
+Pipe from curl for JSON-to-rec conversion:
+
+  curl -s https://api.example.com/users | json2rec
+
+[SEE ALSO]
+.BR rec2json (1),
+.BR csv2rec (1),
+.BR recsel (1),
+.BR recinf (1),
+.BR recfix (1).

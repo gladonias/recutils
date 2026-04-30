@@ -24,6 +24,7 @@ man_MANS = recdel.1 \
            recfmt.1 \
            csv2rec.1 \
            rec2csv.1 \
+           json2rec.1 \
            rec2json.1 \
            rec2sql.1 \
            rec2xml.1
@@ -34,6 +35,7 @@ endif
 
 H2M_FILES = recsel.h2m recins.h2m recdel.h2m recset.h2m recinf.h2m \
             recfix.h2m recfmt.h2m rec2csv.h2m csv2rec.h2m mdb2rec.h2m \
+            json2rec.h2m \
             rec2json.h2m \
             rec2sql.h2m \
             rec2xml.h2m
@@ -52,6 +54,9 @@ common_mandeps = $(top_srcdir)/configure.ac \
 
 rec2csv.1: $(top_srcdir)/utils/rec2csv.c $(common_mandeps) $(srcdir)/rec2csv.h2m
 	$(HELP2MAN) -p recutils --name="rec to csv converter" --include=$(srcdir)/rec2csv.h2m $(builddir)/../utils/rec2csv -o $@
+
+json2rec.1: $(top_srcdir)/utils/json2rec.c $(common_mandeps) $(srcdir)/json2rec.h2m
+	$(HELP2MAN) -p recutils --name="json to rec converter" --include=$(srcdir)/json2rec.h2m $(builddir)/../utils/json2rec -o $@
 
 rec2json.1: $(top_srcdir)/utils/rec2json.c $(common_mandeps) $(srcdir)/rec2json.h2m
 	$(HELP2MAN) -p recutils --name="rec to json converter" --include=$(srcdir)/rec2json.h2m $(builddir)/../utils/rec2json -o $@
