@@ -1,0 +1,20 @@
+[EXAMPLES]
+Convert XML (recdata format) to rec:
+
+  xml2rec data.xml
+
+Convert XML with a specific record type override:
+
+  xml2rec -t Contact data.xml
+
+Pipe from rec2xml for round-trip conversion:
+
+  rec2xml contacts.rec | xml2rec
+
+[SEE ALSO]
+.BR rec2xml (1),
+.BR json2rec (1),
+.BR csv2rec (1),
+.BR recsel (1),
+.BR recinf (1),
+.BR recfix (1).

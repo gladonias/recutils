@@ -27,6 +27,7 @@ man_MANS = recdel.1 \
            json2rec.1 \
            rec2json.1 \
            rec2sql.1 \
+           xml2rec.1 \
            rec2xml.1
 
 if COMPILE_MDB2REC
@@ -38,6 +39,7 @@ H2M_FILES = recsel.h2m recins.h2m recdel.h2m recset.h2m recinf.h2m \
             json2rec.h2m \
             rec2json.h2m \
             rec2sql.h2m \
+            xml2rec.h2m \
             rec2xml.h2m
 
 EXTRA_DIST = $(man_MANS) $(H2M_FILES)
@@ -63,6 +65,9 @@ rec2json.1: $(top_srcdir)/utils/rec2json.c $(common_mandeps) $(srcdir)/rec2json.
 
 rec2sql.1: $(top_srcdir)/utils/rec2sql.c $(common_mandeps) $(srcdir)/rec2sql.h2m
 	$(HELP2MAN) -p recutils --name="rec to sql converter" --include=$(srcdir)/rec2sql.h2m $(builddir)/../utils/rec2sql -o $@
+
+xml2rec.1: $(top_srcdir)/utils/xml2rec.c $(common_mandeps) $(srcdir)/xml2rec.h2m
+	$(HELP2MAN) -p recutils --name="xml to rec converter" --include=$(srcdir)/xml2rec.h2m $(builddir)/../utils/xml2rec -o $@
 
 rec2xml.1: $(top_srcdir)/utils/rec2xml.c $(common_mandeps) $(srcdir)/rec2xml.h2m
 	$(HELP2MAN) -p recutils --name="rec to xml converter" --include=$(srcdir)/rec2xml.h2m $(builddir)/../utils/rec2xml -o $@
