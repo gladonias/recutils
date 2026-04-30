@@ -236,23 +236,6 @@ field_cb (void *s, size_t len, void *data)
 
       if (!csv2rec_omit_empty || (strlen(str) > 0))
         {
-          if (ctx->num_fields > ctx->num_field_names)
-            {
-              char *source = csv2rec_csv_file;
-
-              if (!source)
-                source = "stdin";
-
-              fprintf (stderr,
-                       _("%s: %lu: \
-this line contains %lu fields, but %lu header fields were read\n"),
-                       source,
-                       ctx->lineno,
-                       ctx->num_field_names,
-                       ctx->num_fields);
-              exit (EXIT_FAILURE);
-            }
-
           field = rec_field_new (ctx->field_names[ctx->num_fields], str);
           rec_mset_append (rec_record_mset (ctx->record), MSET_FIELD,
                            (void *) field, MSET_ANY);
@@ -362,6 +345,9 @@ process_csv (void)
                       csv_strerror (csv_error (&p)));
 
     }
+
+  csv_fini (&p, field_cb, record_cb, &ctx);
+  csv_free (&p);
 
   return ctx.db;
 }

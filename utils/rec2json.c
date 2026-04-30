@@ -254,42 +254,49 @@ rec2json_process_data (rec_db_t db)
         || (typed_count == 1 && rec_db_size (db) > 1);
     }
 
-  if (multi)
-    putchar ('{');
-
-  for (i = 0; i < rec_db_size (db); i++)
+  if (rec_db_size (db) == 0)
     {
-      rset = rec_db_get_rset (db, i);
+      fputs ("[]", stdout);
+    }
+  else
+    {
+      if (multi)
+        putchar ('{');
 
-      if (rec2json_record_type)
+      for (i = 0; i < rec_db_size (db); i++)
         {
-          if (!rec_rset_type (rset)
-              || strcmp (rec_rset_type (rset), rec2json_record_type) != 0)
-            continue;
-        }
+          rset = rec_db_get_rset (db, i);
 
-      if (!rec_rset_sort (rset, rec2json_sort_by_fields))
-        recutl_out_of_memory ();
+          if (rec2json_record_type)
+            {
+              if (!rec_rset_type (rset)
+                  || strcmp (rec_rset_type (rset), rec2json_record_type) != 0)
+                continue;
+            }
+
+          if (!rec_rset_sort (rset, rec2json_sort_by_fields))
+            recutl_out_of_memory ();
+
+          if (multi)
+            {
+              if (!first)
+                fputs (", ", stdout);
+              first = false;
+
+              if (rec_rset_type (rset))
+                rec2json_write_str (rec_rset_type (rset));
+              else
+                fputs ("\"\"", stdout);
+
+              fputs (": ", stdout);
+            }
+
+          rec2json_generate_rset (rset);
+        }
 
       if (multi)
-        {
-          if (!first)
-            fputs (", ", stdout);
-          first = false;
-
-          if (rec_rset_type (rset))
-            rec2json_write_str (rec_rset_type (rset));
-          else
-            fputs ("\"\"", stdout);
-
-          fputs (": ", stdout);
-        }
-
-      rec2json_generate_rset (rset);
+        putchar ('}');
     }
-
-  if (multi)
-    putchar ('}');
 
   putchar ('\n');
   return ret;

@@ -119,7 +119,7 @@ test_tool rec2json-empty ok \
           rec2json \
           '' \
           empty \
-'
+'[]
 '
 
 test_tool rec2json-with-type ok \
