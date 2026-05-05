@@ -34,7 +34,14 @@ libtool
 /utils/csv2rec
 /utils/mdb2rec
 /utils/rec2csv
+/utils/rec2json
+/utils/rec2sql
+/utils/rec2xml
+/utils/json2rec
+/utils/xml2rec
 /utils/recfmt
+/recutils.pc
+/torture/utils/*.diff
 /lib/
 /m4/
 /src/config.h
