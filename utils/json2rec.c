@@ -165,6 +165,48 @@ json_parse_string_value (void)
                       }
                   }
 
+                /* Handle UTF-16 surrogate pairs.  */
+                if (cp >= 0xD800 && cp <= 0xDBFF)
+                  {
+                    unsigned int lo = 0;
+
+                    if (jp[0] != '\\' || jp[1] != 'u')
+                      {
+                        free (buf);
+                        return NULL;
+                      }
+                    jp += 2;
+
+                    for (i = 0; i < 4 && *jp; i++, jp++)
+                      {
+                        lo <<= 4;
+                        if (*jp >= '0' && *jp <= '9')
+                          lo |= *jp - '0';
+                        else if (*jp >= 'a' && *jp <= 'f')
+                          lo |= *jp - 'a' + 10;
+                        else if (*jp >= 'A' && *jp <= 'F')
+                          lo |= *jp - 'A' + 10;
+                        else
+                          {
+                            free (buf);
+                            return NULL;
+                          }
+                      }
+
+                    if (lo < 0xDC00 || lo > 0xDFFF)
+                      {
+                        free (buf);
+                        return NULL;
+                      }
+
+                    cp = 0x10000 + ((cp - 0xD800) << 10) + (lo - 0xDC00);
+                  }
+                else if (cp >= 0xDC00 && cp <= 0xDFFF)
+                  {
+                    free (buf);
+                    return NULL;
+                  }
+
                 /* Encode as UTF-8.  */
                 if (cp < 0x80)
                   buf[len++] = (char) cp;
@@ -173,9 +215,16 @@ json_parse_string_value (void)
                     buf[len++] = (char) (0xC0 | (cp >> 6));
                     buf[len++] = (char) (0x80 | (cp & 0x3F));
                   }
-                else
+                else if (cp < 0x10000)
                   {
                     buf[len++] = (char) (0xE0 | (cp >> 12));
+                    buf[len++] = (char) (0x80 | ((cp >> 6) & 0x3F));
+                    buf[len++] = (char) (0x80 | (cp & 0x3F));
+                  }
+                else
+                  {
+                    buf[len++] = (char) (0xF0 | (cp >> 18));
+                    buf[len++] = (char) (0x80 | ((cp >> 12) & 0x3F));
                     buf[len++] = (char) (0x80 | ((cp >> 6) & 0x3F));
                     buf[len++] = (char) (0x80 | (cp & 0x3F));
                   }
