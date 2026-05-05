@@ -35,6 +35,7 @@
 char *rec2sql_record_type = NULL;
 rec_fex_t rec2sql_sort_by_fields = NULL;
 char *rec2sql_table_name = NULL;
+bool rec2sql_create_table = false;
 
 /*
  * Command line options management
@@ -45,7 +46,8 @@ enum
     COMMON_ARGS,
     RECORD_TYPE_ARG,
     SORT_ARG,
-    TABLE_NAME_ARG
+    TABLE_NAME_ARG,
+    CREATE_TABLE_ARG
   };
 
 static const struct option GNU_longOptions[] =
@@ -54,6 +56,7 @@ static const struct option GNU_longOptions[] =
     {"type", required_argument, NULL, RECORD_TYPE_ARG},
     {"sort", required_argument, NULL, SORT_ARG},
     {"table", required_argument, NULL, TABLE_NAME_ARG},
+    {"create-table", no_argument, NULL, CREATE_TABLE_ARG},
     {NULL, 0, NULL, 0}
   };
 
@@ -76,7 +79,8 @@ Convert rec data into SQL INSERT statements.\n"), stdout);
                                         is omitted then the default record set is used\n\
   -T, --table=NAME                    use NAME as the SQL table name instead of\n\
                                         the record type\n\
-  -S, --sort=FIELDS                   sort the output by the specified fields.\n"),
+  -S, --sort=FIELDS                   sort the output by the specified fields.\n\
+  -c, --create-table                  emit CREATE TABLE statements before INSERTs.\n"),
          stdout);
 
   recutl_print_help_common ();
@@ -92,7 +96,7 @@ rec2sql_parse_args (int argc, char **argv)
 
   while ((ret = getopt_long (argc,
                              argv,
-                             "t:S:T:",
+                             "t:S:T:c",
                              GNU_longOptions,
                              NULL)) != -1)
     {
@@ -121,6 +125,10 @@ rec2sql_parse_args (int argc, char **argv)
         case TABLE_NAME_ARG:
         case 'T':
           rec2sql_table_name = xstrdup (optarg);
+          break;
+        case CREATE_TABLE_ARG:
+        case 'c':
+          rec2sql_create_table = true;
           break;
         default:
           exit (EXIT_FAILURE);
@@ -258,6 +266,58 @@ rec2sql_generate_rset (rec_rset_t rset, const char *table)
   rec_mset_iterator_free (&iter);
 }
 
+static void
+rec2sql_generate_create_table (rec_rset_t rset, const char *table)
+{
+  rec_mset_iterator_t iter_rset;
+  rec_mset_iterator_t iter_record;
+  rec_record_t record;
+  rec_field_t field;
+  rec_fex_t columns;
+  size_t i;
+
+  columns = rec_fex_new (NULL, REC_FEX_SIMPLE);
+
+  iter_rset = rec_mset_iterator (rec_rset_mset (rset));
+  while (rec_mset_iterator_next (&iter_rset, MSET_RECORD,
+                                 (const void **) &record, NULL))
+    {
+      iter_record = rec_mset_iterator (rec_record_mset (record));
+      while (rec_mset_iterator_next (&iter_record, MSET_FIELD,
+                                     (const void **) &field, NULL))
+        {
+          if (!rec_fex_member_p (columns, rec_field_name (field), 0, 0))
+            rec_fex_append (columns, rec_field_name (field), 0, 0);
+        }
+      rec_mset_iterator_free (&iter_record);
+    }
+  rec_mset_iterator_free (&iter_rset);
+
+  if (rec_fex_size (columns) == 0)
+    {
+      rec_fex_destroy (columns);
+      return;
+    }
+
+  fputs ("CREATE TABLE IF NOT EXISTS ", stdout);
+  rec2sql_write_identifier (table);
+  fputs (" (\n", stdout);
+
+  for (i = 0; i < rec_fex_size (columns); i++)
+    {
+      rec_fex_elem_t elem = rec_fex_get (columns, i);
+
+      if (i > 0)
+        fputs (",\n", stdout);
+      fputs ("  ", stdout);
+      rec2sql_write_identifier (rec_fex_elem_field_name (elem));
+      fputs (" TEXT", stdout);
+    }
+
+  fputs ("\n);\n\n", stdout);
+  rec_fex_destroy (columns);
+}
+
 static bool
 rec2sql_process_data (rec_db_t db)
 {
@@ -286,6 +346,9 @@ rec2sql_process_data (rec_db_t db)
         table = rec_rset_type (rset);
       else
         table = "data";
+
+      if (rec2sql_create_table)
+        rec2sql_generate_create_table (rset, table);
 
       rec2sql_generate_rset (rset, table);
     }
