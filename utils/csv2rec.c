@@ -349,6 +349,13 @@ process_csv (void)
   csv_fini (&p, field_cb, record_cb, &ctx);
   csv_free (&p);
 
+  for (size_t i = 0; i < ctx.num_field_names; i++)
+    free (ctx.field_names[i]);
+  free (ctx.field_names);
+
+  if (csv2rec_csv_file)
+    fclose (in);
+
   return ctx.db;
 }
 
