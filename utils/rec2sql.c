@@ -227,7 +227,7 @@ rec2sql_generate_record (rec_record_t record, const char *table)
               const char *p;
 
               if (i > 0)
-                fputs ("\\n", stdout);
+                putchar ('\n');
               for (p = val; *p; p++)
                 {
                   if (*p == '\'')

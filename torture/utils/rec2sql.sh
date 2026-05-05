@@ -98,7 +98,8 @@ test_tool rec2sql-multi-value ok \
           rec2sql \
           '' \
           multi-value \
-'INSERT INTO "data" ("Name", "Email") VALUES ('\''John'\'', '\''john@home.com\njohn@work.com'\'');
+'INSERT INTO "data" ("Name", "Email") VALUES ('\''John'\'', '\''john@home.com
+john@work.com'\'');
 '
 
 test_tool rec2sql-escape ok \
