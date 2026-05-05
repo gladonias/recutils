@@ -69,6 +69,26 @@ static const struct option GNU_longOptions[] =
  */
 
 static const char *xp;
+static const char *xp_start;
+
+static void
+xml_get_position (size_t *line, size_t *col)
+{
+  const char *p;
+  *line = 1;
+  *col = 1;
+
+  for (p = xp_start; p < xp; p++)
+    {
+      if (*p == '\n')
+        {
+          (*line)++;
+          *col = 1;
+        }
+      else
+        (*col)++;
+    }
+}
 
 static void
 xml_skip_ws (void)
@@ -93,7 +113,12 @@ static void
 xml_expect (const char *str)
 {
   if (!xml_match (str))
-    recutl_fatal (_("expected '%s' in XML input\n"), str);
+    {
+      size_t line, col;
+      xml_get_position (&line, &col);
+      recutl_fatal (_("expected '%s' in XML input at line %zu, column %zu\n"),
+                    str, line, col);
+    }
 }
 
 /* Unescape XML entities in-place and return the string.  */
@@ -139,13 +164,23 @@ xml_parse_attr_value (void)
   const char *end;
 
   if (*xp != '"')
-    recutl_fatal (_("expected '\"' in XML attribute\n"));
+    {
+      size_t line, col;
+      xml_get_position (&line, &col);
+      recutl_fatal (_("expected '\"' in XML attribute at line %zu, column %zu\n"),
+                    line, col);
+    }
   xp++;
 
   start = xp;
   end = strchr (xp, '"');
   if (!end)
-    recutl_fatal (_("unterminated attribute value in XML\n"));
+    {
+      size_t line, col;
+      xml_get_position (&line, &col);
+      recutl_fatal (_("unterminated attribute value in XML at line %zu, column %zu\n"),
+                    line, col);
+    }
 
   xp = end + 1;
   return xml_unescape (start, end - start);
@@ -174,7 +209,12 @@ xml_skip_declaration (void)
     {
       const char *end = strstr (xp, "?>");
       if (!end)
-        recutl_fatal (_("unterminated XML declaration\n"));
+        {
+          size_t line, col;
+          xml_get_position (&line, &col);
+          recutl_fatal (_("unterminated XML declaration at line %zu, column %zu\n"),
+                        line, col);
+        }
       xp = end + 2;
     }
 }
@@ -189,7 +229,12 @@ xml_skip_doctype (void)
     {
       const char *end = strchr (xp, '>');
       if (!end)
-        recutl_fatal (_("unterminated DOCTYPE declaration\n"));
+        {
+          size_t line, col;
+          xml_get_position (&line, &col);
+          recutl_fatal (_("unterminated DOCTYPE declaration at line %zu, column %zu\n"),
+                        line, col);
+        }
       xp = end + 1;
     }
 }
@@ -206,7 +251,12 @@ xml_skip_comments (void)
         break;
       const char *end = strstr (xp, "-->");
       if (!end)
-        recutl_fatal (_("unterminated XML comment\n"));
+        {
+          size_t line, col;
+          xml_get_position (&line, &col);
+          recutl_fatal (_("unterminated XML comment at line %zu, column %zu\n"),
+                        line, col);
+        }
       xp = end + 3;
     }
 }
@@ -272,7 +322,12 @@ xml_parse_record (void)
       if (strncmp (xp, "</record>", 9) == 0)
         break;
       if (strncmp (xp, "<field", 6) != 0)
-        recutl_fatal (_("expected <field> or </record> in XML input\n"));
+        {
+          size_t line, col;
+          xml_get_position (&line, &col);
+          recutl_fatal (_("expected <field> or </record> in XML input at line %zu, column %zu\n"),
+                        line, col);
+        }
 
       rec_field_t field = xml_parse_field ();
       if (field)
@@ -322,7 +377,12 @@ xml_parse_recordset (void)
       if (strncmp (xp, "</recordset>", 12) == 0)
         break;
       if (strncmp (xp, "<record>", 8) != 0)
-        recutl_fatal (_("expected <record> or </recordset> in XML input\n"));
+        {
+          size_t line, col;
+          xml_get_position (&line, &col);
+          recutl_fatal (_("expected <record> or </recordset> in XML input at line %zu, column %zu\n"),
+                        line, col);
+        }
 
       rec_record_t record = xml_parse_record ();
       rec_mset_append (rec_rset_mset (rset), MSET_RECORD,
@@ -439,6 +499,7 @@ xml2rec_process_input (void)
 
   input = xml2rec_read_input ();
   xp = input;
+  xp_start = input;
 
   xml_skip_ws ();
   if (*xp == '\0')
@@ -465,7 +526,12 @@ xml2rec_process_input (void)
       if (strncmp (xp, "</recdata>", 10) == 0)
         break;
       if (strncmp (xp, "<recordset", 10) != 0)
-        recutl_fatal (_("expected <recordset> or </recdata> in XML input\n"));
+        {
+          size_t line, col;
+          xml_get_position (&line, &col);
+          recutl_fatal (_("expected <recordset> or </recdata> in XML input at line %zu, column %zu\n"),
+                        line, col);
+        }
 
       rec_rset_t rset = xml_parse_recordset ();
       rec_db_insert_rset (db, rset, rec_db_size (db));

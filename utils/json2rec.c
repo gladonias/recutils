@@ -98,8 +98,28 @@ struct json_pair
 };
 
 static const char *jp;
+static const char *jp_start;
 
 static void json_value_free (struct json_value *v);
+
+static void
+json_get_position (size_t *line, size_t *col)
+{
+  const char *p;
+  *line = 1;
+  *col = 1;
+
+  for (p = jp_start; p < jp; p++)
+    {
+      if (*p == '\n')
+        {
+          (*line)++;
+          *col = 1;
+        }
+      else
+        (*col)++;
+    }
+}
 
 static void
 json_skip_ws (void)
@@ -723,6 +743,7 @@ json2rec_process_input (void)
 
   input = json2rec_read_input ();
   jp = input;
+  jp_start = input;
 
   json_skip_ws ();
   if (*jp == '\0')
@@ -733,8 +754,11 @@ json2rec_process_input (void)
 
   if (!json_parse_value (&root))
     {
+      size_t line, col;
+      json_get_position (&line, &col);
       free (input);
-      recutl_fatal (_("invalid JSON input\n"));
+      recutl_fatal (_("invalid JSON input at line %zu, column %zu\n"),
+                    line, col);
     }
 
   db = rec_db_new ();
