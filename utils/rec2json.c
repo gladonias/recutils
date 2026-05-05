@@ -34,6 +34,7 @@
 
 char *rec2json_record_type = NULL;
 rec_fex_t rec2json_sort_by_fields = NULL;
+bool rec2json_pretty = false;
 
 /*
  * Command line options management
@@ -43,7 +44,8 @@ enum
   {
     COMMON_ARGS,
     RECORD_TYPE_ARG,
-    SORT_ARG
+    SORT_ARG,
+    PRETTY_ARG
   };
 
 static const struct option GNU_longOptions[] =
@@ -51,6 +53,7 @@ static const struct option GNU_longOptions[] =
     COMMON_LONG_ARGS,
     {"type", required_argument, NULL, RECORD_TYPE_ARG},
     {"sort", required_argument, NULL, SORT_ARG},
+    {"pretty", no_argument, NULL, PRETTY_ARG},
     {NULL, 0, NULL, 0}
   };
 
@@ -71,7 +74,8 @@ Convert rec data into JSON data.\n"), stdout);
   fputs (_("\
   -t, --type=TYPE                     record set to convert; if this parameter\n\
                                         is omitted then the default record set is used\n\
-  -S, --sort=FIELDS                   sort the output by the specified fields.\n"),
+  -S, --sort=FIELDS                   sort the output by the specified fields.\n\
+  -p, --pretty                        pretty-print the JSON output with indentation.\n"),
          stdout);
 
   recutl_print_help_common ();
@@ -87,7 +91,7 @@ rec2json_parse_args (int argc, char **argv)
 
   while ((ret = getopt_long (argc,
                              argv,
-                             "t:S:",
+                             "t:S:p",
                              GNU_longOptions,
                              NULL)) != -1)
     {
@@ -112,6 +116,10 @@ rec2json_parse_args (int argc, char **argv)
           if (!rec2json_sort_by_fields)
             recutl_fatal (_("internal error creating fex.\n"));
 
+          break;
+        case PRETTY_ARG:
+        case 'p':
+          rec2json_pretty = true;
           break;
         default:
           exit (EXIT_FAILURE);
@@ -148,7 +156,32 @@ rec2json_write_str (const char *str)
 }
 
 static void
-rec2json_generate_record (rec_record_t record)
+rec2json_indent (int level)
+{
+  if (rec2json_pretty)
+    for (int i = 0; i < level * 2; i++)
+      putchar (' ');
+}
+
+static void
+rec2json_newline (void)
+{
+  if (rec2json_pretty)
+    putchar ('\n');
+}
+
+static void
+rec2json_separator (void)
+{
+  putchar (',');
+  if (rec2json_pretty)
+    putchar ('\n');
+  else
+    putchar (' ');
+}
+
+static void
+rec2json_generate_record (rec_record_t record, int depth)
 {
   rec_mset_iterator_t iter;
   rec_field_t field;
@@ -157,6 +190,7 @@ rec2json_generate_record (rec_record_t record)
   bool first_field = true;
 
   putchar ('{');
+  rec2json_newline ();
 
   iter = rec_mset_iterator (rec_record_mset (record));
   while (rec_mset_iterator_next (&iter, MSET_FIELD,
@@ -167,31 +201,39 @@ rec2json_generate_record (rec_record_t record)
 
       if (prev_name && rec_field_name_equal_p (prev_name, name))
         {
-          /* Same field name repeated — continue the JSON array.  */
-          fputs (", ", stdout);
+          putchar (',');
+          if (rec2json_pretty)
+            {
+              putchar ('\n');
+              rec2json_indent (depth + 2);
+            }
+          else
+            putchar (' ');
           rec2json_write_str (value);
         }
       else
         {
-          /* Close the previous array if one was open.  */
           if (array_depth > 0)
             {
+              rec2json_newline ();
+              rec2json_indent (depth + 1);
               putchar (']');
               array_depth = 0;
             }
 
           if (!first_field)
-            fputs (", ", stdout);
+            rec2json_separator ();
           first_field = false;
 
+          rec2json_indent (depth + 1);
           rec2json_write_str (name);
           fputs (": ", stdout);
 
-          /* Check if the next field has the same name (look ahead by
-             counting occurrences).  If so, start a JSON array.  */
           if (rec_record_get_num_fields_by_name (record, name) > 1)
             {
               putchar ('[');
+              rec2json_newline ();
+              rec2json_indent (depth + 2);
               array_depth = 1;
             }
 
@@ -202,35 +244,45 @@ rec2json_generate_record (rec_record_t record)
     }
 
   if (array_depth > 0)
-    putchar (']');
+    {
+      rec2json_newline ();
+      rec2json_indent (depth + 1);
+      putchar (']');
+    }
 
   rec_mset_iterator_free (&iter);
 
+  rec2json_newline ();
+  rec2json_indent (depth);
   putchar ('}');
 }
 
 static void
-rec2json_generate_rset (rec_rset_t rset)
+rec2json_generate_rset (rec_rset_t rset, int depth)
 {
   rec_mset_iterator_t iter;
   rec_record_t record;
   bool first = true;
 
   putchar ('[');
+  rec2json_newline ();
 
   iter = rec_mset_iterator (rec_rset_mset (rset));
   while (rec_mset_iterator_next (&iter, MSET_RECORD,
                                  (const void **) &record, NULL))
     {
       if (!first)
-        fputs (", ", stdout);
+        rec2json_separator ();
       first = false;
 
-      rec2json_generate_record (record);
+      rec2json_indent (depth + 1);
+      rec2json_generate_record (record, depth + 1);
     }
 
   rec_mset_iterator_free (&iter);
 
+  rec2json_newline ();
+  rec2json_indent (depth);
   putchar (']');
 }
 
@@ -243,7 +295,6 @@ rec2json_process_data (rec_db_t db)
   bool multi = false;
   bool first = true;
 
-  /* Determine whether we are outputting multiple record sets.  */
   if (!rec2json_record_type && rec_db_size (db) > 1)
     {
       size_t typed_count = 0;
@@ -261,7 +312,10 @@ rec2json_process_data (rec_db_t db)
   else
     {
       if (multi)
-        putchar ('{');
+        {
+          putchar ('{');
+          rec2json_newline ();
+        }
 
       for (i = 0; i < rec_db_size (db); i++)
         {
@@ -280,22 +334,29 @@ rec2json_process_data (rec_db_t db)
           if (multi)
             {
               if (!first)
-                fputs (", ", stdout);
+                rec2json_separator ();
               first = false;
 
+              rec2json_indent (1);
               if (rec_rset_type (rset))
                 rec2json_write_str (rec_rset_type (rset));
               else
                 fputs ("\"\"", stdout);
 
               fputs (": ", stdout);
+              rec2json_generate_rset (rset, 1);
             }
-
-          rec2json_generate_rset (rset);
+          else
+            {
+              rec2json_generate_rset (rset, 0);
+            }
         }
 
       if (multi)
-        putchar ('}');
+        {
+          rec2json_newline ();
+          putchar ('}');
+        }
     }
 
   putchar ('\n');
