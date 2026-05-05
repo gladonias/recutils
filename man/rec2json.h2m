@@ -3,6 +3,10 @@ Convert all records to JSON:
 
   rec2json contacts.rec
 
+Pretty-print the output:
+
+  rec2json --pretty contacts.rec
+
 Convert only a specific record type:
 
   rec2json -t Task todo.rec

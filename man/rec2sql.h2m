@@ -3,6 +3,10 @@ Convert all records to SQL INSERT statements:
 
   rec2sql contacts.rec
 
+Include CREATE TABLE DDL:
+
+  rec2sql --create-table contacts.rec
+
 Convert a specific record type:
 
   rec2sql -t Task todo.rec
@@ -11,9 +15,9 @@ Use a custom table name:
 
   rec2sql -t Task -T tasks_table todo.rec
 
-Pipe output into SQLite:
+Create a complete SQLite database:
 
-  rec2sql contacts.rec | sqlite3 contacts.db
+  rec2sql -c contacts.rec | sqlite3 contacts.db
 
 [SEE ALSO]
 .BR rec2csv (1),

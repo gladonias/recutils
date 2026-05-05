@@ -4,6 +4,45 @@ All notable changes to GNU recutils will be documented in this file.
 
 For historical release notes prior to this changelog, see the [NEWS](NEWS) file.
 
+## [1.9.4] - 2026-05-05
+
+### Added
+
+- **`rec2json --pretty`**: New `-p`/`--pretty` flag for indented,
+  human-readable JSON output with 2-space indentation.
+
+- **`rec2sql --create-table`**: New `-c`/`--create-table` flag that
+  emits a `CREATE TABLE IF NOT EXISTS` DDL statement before the
+  `INSERT` statements.  Column names are auto-detected from all records
+  in the set; all columns use `TEXT` type.
+
+- **Error position reporting**: `json2rec` and `xml2rec` now report
+  line and column numbers in parse error messages, making it easier to
+  locate problems in malformed input files.
+
+### Fixed
+
+- Fix `json2rec` UTF-16 surrogate pair handling.  JSON `\uD800`-style
+  escape pairs (used for codepoints above U+FFFF) are now correctly
+  decoded and emitted as 4-byte UTF-8.  Lone surrogates are rejected
+  as invalid JSON.
+  (json2rec.c)
+
+- Fix `csv2rec` memory leak: the `field_names` array and its strings
+  were never freed after parsing, and the input file handle was never
+  closed.
+  (csv2rec.c)
+
+- Fix `rec2sql` non-portable newline encoding in multi-valued fields.
+  Previously used a literal `\n` escape (MySQL/PostgreSQL-specific);
+  now uses an actual newline character inside the SQL string literal,
+  which is valid per the SQL standard.
+  (rec2sql.c)
+
+- Add missing `.gitignore` entries for new utility binaries (`json2rec`,
+  `rec2json`, `rec2sql`, `rec2xml`, `xml2rec`), the generated
+  `recutils.pc` file, and test diff artifacts.
+
 ## [1.9.3] - 2026-04-30
 
 ### Added

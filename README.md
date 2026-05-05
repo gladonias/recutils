@@ -212,6 +212,25 @@ recdel -e 'Id = 4' books.rec
 recfix books.rec
 ```
 
+Convert between formats:
+
+```sh
+# Export to JSON
+rec2json books.rec
+
+# Export to pretty-printed JSON
+rec2json --pretty books.rec
+
+# Export to SQL (with CREATE TABLE)
+rec2sql --create-table books.rec
+
+# Import from JSON
+echo '[{"Title":"Dune","Author":"Frank Herbert"}]' | json2rec -t Book
+
+# Import from CSV
+csv2rec -t Book catalog.csv
+```
+
 For complete documentation, see the [GNU recutils manual](https://www.gnu.org/software/recutils/manual/).
 
 ## Known limitations
