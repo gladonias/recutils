@@ -112,8 +112,8 @@ host_triplet = @host@
 bin_PROGRAMS = recinf$(EXEEXT) recsel$(EXEEXT) recins$(EXEEXT) \
 	recdel$(EXEEXT) recset$(EXEEXT) recfix$(EXEEXT) \
 	recfmt$(EXEEXT) csv2rec$(EXEEXT) rec2csv$(EXEEXT) \
-	rec2json$(EXEEXT) rec2sql$(EXEEXT) rec2xml$(EXEEXT) \
-	$(am__EXEEXT_1)
+	json2rec$(EXEEXT) rec2json$(EXEEXT) rec2sql$(EXEEXT) \
+	xml2rec$(EXEEXT) rec2xml$(EXEEXT) $(am__EXEEXT_1)
 @CRYPT_TRUE@am__append_1 = $(LTLIBGCRYPT)
 @USE_COVERAGE_TRUE@am__append_2 = -fprofile-arcs -ftest-coverage
 subdir = utils
@@ -291,6 +291,9 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+am_json2rec_OBJECTS = $(am__objects_1) json2rec.$(OBJEXT)
+json2rec_OBJECTS = $(am_json2rec_OBJECTS)
+json2rec_DEPENDENCIES = $(am__DEPENDENCIES_3)
 am__objects_2 = mdb2rec-recutl.$(OBJEXT)
 am_mdb2rec_OBJECTS = $(am__objects_2) mdb2rec-mdb2rec.$(OBJEXT)
 mdb2rec_OBJECTS = $(am_mdb2rec_OBJECTS)
@@ -332,6 +335,9 @@ recsel_DEPENDENCIES = $(am__DEPENDENCIES_3)
 am_recset_OBJECTS = $(am__objects_1) recset.$(OBJEXT)
 recset_OBJECTS = $(am_recset_OBJECTS)
 recset_DEPENDENCIES = $(am__DEPENDENCIES_3)
+am_xml2rec_OBJECTS = $(am__objects_1) xml2rec.$(OBJEXT)
+xml2rec_OBJECTS = $(am_xml2rec_OBJECTS)
+xml2rec_DEPENDENCIES = $(am__DEPENDENCIES_3)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -347,14 +353,15 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/csv2rec.Po \
+am__depfiles_remade = ./$(DEPDIR)/csv2rec.Po ./$(DEPDIR)/json2rec.Po \
 	./$(DEPDIR)/mdb2rec-mdb2rec.Po ./$(DEPDIR)/mdb2rec-recutl.Po \
 	./$(DEPDIR)/rec2csv.Po ./$(DEPDIR)/rec2json.Po \
 	./$(DEPDIR)/rec2sql.Po ./$(DEPDIR)/rec2xml.Po \
 	./$(DEPDIR)/recdel.Po ./$(DEPDIR)/recfix.Po \
 	./$(DEPDIR)/recfmt.Po ./$(DEPDIR)/recinf.Po \
 	./$(DEPDIR)/recins.Po ./$(DEPDIR)/recsel.Po \
-	./$(DEPDIR)/recset.Po ./$(DEPDIR)/recutl.Po
+	./$(DEPDIR)/recset.Po ./$(DEPDIR)/recutl.Po \
+	./$(DEPDIR)/xml2rec.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -374,16 +381,17 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(csv2rec_SOURCES) $(mdb2rec_SOURCES) $(rec2csv_SOURCES) \
-	$(rec2json_SOURCES) $(rec2sql_SOURCES) $(rec2xml_SOURCES) \
-	$(recdel_SOURCES) $(recfix_SOURCES) $(recfmt_SOURCES) \
-	$(recinf_SOURCES) $(recins_SOURCES) $(recsel_SOURCES) \
-	$(recset_SOURCES)
-DIST_SOURCES = $(csv2rec_SOURCES) $(mdb2rec_SOURCES) \
+SOURCES = $(csv2rec_SOURCES) $(json2rec_SOURCES) $(mdb2rec_SOURCES) \
 	$(rec2csv_SOURCES) $(rec2json_SOURCES) $(rec2sql_SOURCES) \
 	$(rec2xml_SOURCES) $(recdel_SOURCES) $(recfix_SOURCES) \
 	$(recfmt_SOURCES) $(recinf_SOURCES) $(recins_SOURCES) \
-	$(recsel_SOURCES) $(recset_SOURCES)
+	$(recsel_SOURCES) $(recset_SOURCES) $(xml2rec_SOURCES)
+DIST_SOURCES = $(csv2rec_SOURCES) $(json2rec_SOURCES) \
+	$(mdb2rec_SOURCES) $(rec2csv_SOURCES) $(rec2json_SOURCES) \
+	$(rec2sql_SOURCES) $(rec2xml_SOURCES) $(recdel_SOURCES) \
+	$(recfix_SOURCES) $(recfmt_SOURCES) $(recinf_SOURCES) \
+	$(recins_SOURCES) $(recsel_SOURCES) $(recset_SOURCES) \
+	$(xml2rec_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -1920,6 +1928,10 @@ rec2csv_SOURCES = $(COMMONSRC) \
 rec2csv_LDADD = $(COMMONLIBS) \
                 $(top_builddir)/libcsv/libcsv.la
 
+json2rec_SOURCES = $(COMMONSRC) \
+                   json2rec.c
+
+json2rec_LDADD = $(COMMONLIBS)
 rec2json_SOURCES = $(COMMONSRC) \
                    rec2json.c
 
@@ -1928,6 +1940,10 @@ rec2sql_SOURCES = $(COMMONSRC) \
                   rec2sql.c
 
 rec2sql_LDADD = $(COMMONLIBS)
+xml2rec_SOURCES = $(COMMONSRC) \
+                  xml2rec.c
+
+xml2rec_LDADD = $(COMMONLIBS)
 rec2xml_SOURCES = $(COMMONSRC) \
                   rec2xml.c
 
@@ -2019,6 +2035,10 @@ csv2rec$(EXEEXT): $(csv2rec_OBJECTS) $(csv2rec_DEPENDENCIES) $(EXTRA_csv2rec_DEP
 	@rm -f csv2rec$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(csv2rec_OBJECTS) $(csv2rec_LDADD) $(LIBS)
 
+json2rec$(EXEEXT): $(json2rec_OBJECTS) $(json2rec_DEPENDENCIES) $(EXTRA_json2rec_DEPENDENCIES) 
+	@rm -f json2rec$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(json2rec_OBJECTS) $(json2rec_LDADD) $(LIBS)
+
 mdb2rec$(EXEEXT): $(mdb2rec_OBJECTS) $(mdb2rec_DEPENDENCIES) $(EXTRA_mdb2rec_DEPENDENCIES) 
 	@rm -f mdb2rec$(EXEEXT)
 	$(AM_V_CCLD)$(mdb2rec_LINK) $(mdb2rec_OBJECTS) $(mdb2rec_LDADD) $(LIBS)
@@ -2067,6 +2087,10 @@ recset$(EXEEXT): $(recset_OBJECTS) $(recset_DEPENDENCIES) $(EXTRA_recset_DEPENDE
 	@rm -f recset$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(recset_OBJECTS) $(recset_LDADD) $(LIBS)
 
+xml2rec$(EXEEXT): $(xml2rec_OBJECTS) $(xml2rec_DEPENDENCIES) $(EXTRA_xml2rec_DEPENDENCIES) 
+	@rm -f xml2rec$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(xml2rec_OBJECTS) $(xml2rec_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -2074,6 +2098,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csv2rec.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json2rec.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mdb2rec-mdb2rec.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mdb2rec-recutl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rec2csv.Po@am__quote@ # am--include-marker
@@ -2088,6 +2113,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recsel.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recset.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recutl.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xml2rec.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -2281,6 +2307,7 @@ clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-am
 	-rm -f ./$(DEPDIR)/csv2rec.Po
+	-rm -f ./$(DEPDIR)/json2rec.Po
 	-rm -f ./$(DEPDIR)/mdb2rec-mdb2rec.Po
 	-rm -f ./$(DEPDIR)/mdb2rec-recutl.Po
 	-rm -f ./$(DEPDIR)/rec2csv.Po
@@ -2295,6 +2322,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/recsel.Po
 	-rm -f ./$(DEPDIR)/recset.Po
 	-rm -f ./$(DEPDIR)/recutl.Po
+	-rm -f ./$(DEPDIR)/xml2rec.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -2341,6 +2369,7 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/csv2rec.Po
+	-rm -f ./$(DEPDIR)/json2rec.Po
 	-rm -f ./$(DEPDIR)/mdb2rec-mdb2rec.Po
 	-rm -f ./$(DEPDIR)/mdb2rec-recutl.Po
 	-rm -f ./$(DEPDIR)/rec2csv.Po
@@ -2355,6 +2384,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/recsel.Po
 	-rm -f ./$(DEPDIR)/recset.Po
 	-rm -f ./$(DEPDIR)/recutl.Po
+	-rm -f ./$(DEPDIR)/xml2rec.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
