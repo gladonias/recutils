@@ -121,11 +121,42 @@ xml_expect (const char *str)
     }
 }
 
-/* Unescape XML entities in-place and return the string.  */
+/* Encode a Unicode codepoint as UTF-8 into buf at offset *j, growing
+   the offset.  Caller must ensure at least 4 bytes of headroom.  */
+
+static void
+xml_emit_utf8 (char *buf, size_t *j, unsigned int cp)
+{
+  if (cp < 0x80)
+    buf[(*j)++] = (char) cp;
+  else if (cp < 0x800)
+    {
+      buf[(*j)++] = (char) (0xC0 | (cp >> 6));
+      buf[(*j)++] = (char) (0x80 | (cp & 0x3F));
+    }
+  else if (cp < 0x10000)
+    {
+      buf[(*j)++] = (char) (0xE0 | (cp >> 12));
+      buf[(*j)++] = (char) (0x80 | ((cp >> 6) & 0x3F));
+      buf[(*j)++] = (char) (0x80 | (cp & 0x3F));
+    }
+  else
+    {
+      buf[(*j)++] = (char) (0xF0 | (cp >> 18));
+      buf[(*j)++] = (char) (0x80 | ((cp >> 12) & 0x3F));
+      buf[(*j)++] = (char) (0x80 | ((cp >> 6) & 0x3F));
+      buf[(*j)++] = (char) (0x80 | (cp & 0x3F));
+    }
+}
+
+/* Unescape XML entities (named and numeric) and return a new string.  */
 
 static char *
 xml_unescape (const char *src, size_t len)
 {
+  /* Worst case: numeric refs of the form "&#1114111;" (10 bytes)
+     decode to up to 4 UTF-8 bytes — output is bounded by the input
+     length.  */
   char *buf = xmalloc (len + 1);
   size_t j = 0;
   size_t i;
@@ -134,16 +165,62 @@ xml_unescape (const char *src, size_t len)
     {
       if (src[i] == '&')
         {
-          if (strncmp (src + i, "&amp;", 5) == 0)
+          /* Named entities.  */
+          if (i + 5 <= len && strncmp (src + i, "&amp;", 5) == 0)
             { buf[j++] = '&'; i += 4; }
-          else if (strncmp (src + i, "&lt;", 4) == 0)
+          else if (i + 4 <= len && strncmp (src + i, "&lt;", 4) == 0)
             { buf[j++] = '<'; i += 3; }
-          else if (strncmp (src + i, "&gt;", 4) == 0)
+          else if (i + 4 <= len && strncmp (src + i, "&gt;", 4) == 0)
             { buf[j++] = '>'; i += 3; }
-          else if (strncmp (src + i, "&quot;", 6) == 0)
+          else if (i + 6 <= len && strncmp (src + i, "&quot;", 6) == 0)
             { buf[j++] = '"'; i += 5; }
-          else if (strncmp (src + i, "&apos;", 6) == 0)
+          else if (i + 6 <= len && strncmp (src + i, "&apos;", 6) == 0)
             { buf[j++] = '\''; i += 5; }
+          else if (i + 3 <= len && src[i + 1] == '#')
+            {
+              /* Numeric character reference: &#NNN; or &#xHH;  */
+              size_t k = i + 2;
+              unsigned int cp = 0;
+              bool hex = false;
+
+              if (k < len && (src[k] == 'x' || src[k] == 'X'))
+                {
+                  hex = true;
+                  k++;
+                }
+
+              size_t digit_start = k;
+              while (k < len && src[k] != ';')
+                {
+                  unsigned int d;
+                  if (src[k] >= '0' && src[k] <= '9')
+                    d = src[k] - '0';
+                  else if (hex && src[k] >= 'a' && src[k] <= 'f')
+                    d = src[k] - 'a' + 10;
+                  else if (hex && src[k] >= 'A' && src[k] <= 'F')
+                    d = src[k] - 'A' + 10;
+                  else
+                    {
+                      cp = 0;
+                      break;
+                    }
+                  cp = cp * (hex ? 16 : 10) + d;
+                  if (cp > 0x10FFFF)
+                    {
+                      cp = 0;
+                      break;
+                    }
+                  k++;
+                }
+
+              if (k < len && src[k] == ';' && k > digit_start && cp != 0)
+                {
+                  xml_emit_utf8 (buf, &j, cp);
+                  i = k;
+                }
+              else
+                buf[j++] = src[i];
+            }
           else
             buf[j++] = src[i];
         }
@@ -186,17 +263,84 @@ xml_parse_attr_value (void)
   return xml_unescape (start, end - start);
 }
 
-/* Parse text content up to '<' and return the unescaped content.  */
+/* Parse text content up to (but not including) the next '</' end-tag,
+   honoring CDATA sections.  Returns the unescaped content.  */
 
 static char *
 xml_parse_text (void)
 {
-  const char *start = xp;
+  size_t cap = 64;
+  size_t len = 0;
+  char *buf = xmalloc (cap);
 
-  while (*xp && *xp != '<')
-    xp++;
+  while (*xp)
+    {
+      if (strncmp (xp, "<![CDATA[", 9) == 0)
+        {
+          const char *cd_start = xp + 9;
+          const char *cd_end = strstr (cd_start, "]]>");
+          size_t cd_len;
 
-  return xml_unescape (start, xp - start);
+          if (!cd_end)
+            {
+              size_t line, col;
+              xml_get_position (&line, &col);
+              free (buf);
+              recutl_fatal (_("unterminated CDATA section in XML at line %zu, column %zu\n"),
+                            line, col);
+            }
+
+          cd_len = cd_end - cd_start;
+          while (len + cd_len + 1 > cap)
+            cap *= 2;
+          buf = xrealloc (buf, cap);
+          memcpy (buf + len, cd_start, cd_len);
+          len += cd_len;
+          xp = cd_end + 3;
+          continue;
+        }
+
+      if (*xp == '<')
+        break;
+
+      /* Append a chunk of plain text up to the next special character.  */
+      const char *chunk_start = xp;
+      while (*xp && *xp != '<' && *xp != '&')
+        xp++;
+      size_t chunk_len = xp - chunk_start;
+
+      if (chunk_len > 0)
+        {
+          while (len + chunk_len + 1 > cap)
+            cap *= 2;
+          buf = xrealloc (buf, cap);
+          memcpy (buf + len, chunk_start, chunk_len);
+          len += chunk_len;
+        }
+
+      if (*xp == '&')
+        {
+          /* Decode a single entity via xml_unescape over the entity span.  */
+          const char *e_start = xp;
+          xp++;
+          while (*xp && *xp != ';' && *xp != '<' && *xp != '&')
+            xp++;
+          size_t e_len = (*xp == ';' ? (xp - e_start + 1) : (xp - e_start));
+          if (*xp == ';')
+            xp++;
+          char *decoded = xml_unescape (e_start, e_len);
+          size_t d_len = strlen (decoded);
+          while (len + d_len + 1 > cap)
+            cap *= 2;
+          buf = xrealloc (buf, cap);
+          memcpy (buf + len, decoded, d_len);
+          len += d_len;
+          free (decoded);
+        }
+    }
+
+  buf[len] = '\0';
+  return buf;
 }
 
 /* Skip the XML declaration (<?xml ...?>).  */
@@ -279,11 +423,18 @@ xml_parse_field (void)
   name = xml_parse_attr_value ();
 
   xml_skip_ws ();
-  xml_expect (">");
 
-  value = xml_parse_text ();
-
-  xml_expect ("</field>");
+  if (xml_match ("/>"))
+    {
+      /* Self-closing <field name="..."/> with empty value.  */
+      value = xstrdup ("");
+    }
+  else
+    {
+      xml_expect (">");
+      value = xml_parse_text ();
+      xml_expect ("</field>");
+    }
 
   if (!rec_field_name_p (name))
     {
