@@ -15,6 +15,10 @@ Use a custom table name:
 
   rec2sql -t Task -T tasks_table todo.rec
 
+Pick a non-newline join string for multi-valued fields:
+
+  rec2sql --separator='|' contacts.rec
+
 Create a complete SQLite database:
 
   rec2sql -c contacts.rec | sqlite3 contacts.db

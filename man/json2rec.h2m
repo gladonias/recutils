@@ -11,6 +11,10 @@ Pipe from curl for JSON-to-rec conversion:
 
   curl -s https://api.example.com/users | json2rec
 
+Drop fields whose JSON value is null:
+
+  json2rec --null=omit data.json
+
 [SEE ALSO]
 .BR rec2json (1),
 .BR csv2rec (1),
