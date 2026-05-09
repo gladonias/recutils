@@ -37,6 +37,15 @@
 char *json2rec_record_type = NULL;
 char *json2rec_json_file = NULL;
 
+enum null_mode
+  {
+    NULL_KEEP,    /* emit field with empty value (default, back-compat) */
+    NULL_OMIT,    /* drop the field entirely */
+    NULL_STRING   /* emit field with literal value "null" */
+  };
+
+enum null_mode json2rec_null_mode = NULL_KEEP;
+
 /*
  * Command line options management
  */
@@ -44,13 +53,15 @@ char *json2rec_json_file = NULL;
 enum
   {
     COMMON_ARGS,
-    RECORD_TYPE_ARG
+    RECORD_TYPE_ARG,
+    NULL_ARG
   };
 
 static const struct option GNU_longOptions[] =
   {
     COMMON_LONG_ARGS,
     {"type", required_argument, NULL, RECORD_TYPE_ARG},
+    {"null", required_argument, NULL, NULL_ARG},
     {NULL, 0, NULL, 0}
   };
 
@@ -574,7 +585,7 @@ json_value_to_string (struct json_value *v)
     case JSON_BOOL:
       return xstrdup (v->u.boolean ? "true" : "false");
     case JSON_NULL:
-      return xstrdup ("");
+      return xstrdup (json2rec_null_mode == NULL_STRING ? "null" : "");
     default:
       return xstrdup ("");
     }
@@ -614,13 +625,20 @@ json2rec_build_record (struct json_value *obj)
           size_t j;
           for (j = 0; j < pair->value.u.array.count; j++)
             {
-              char *val = json_value_to_string
-                (&pair->value.u.array.elements[j]);
+              struct json_value *elem = &pair->value.u.array.elements[j];
+              if (elem->type == JSON_NULL && json2rec_null_mode == NULL_OMIT)
+                continue;
+              char *val = json_value_to_string (elem);
               rec_field_t field = rec_field_new (pair->key, val);
               rec_mset_append (rec_record_mset (record), MSET_FIELD,
                                (void *) field, MSET_ANY);
               free (val);
             }
+        }
+      else if (pair->value.type == JSON_NULL
+               && json2rec_null_mode == NULL_OMIT)
+        {
+          /* Drop the field entirely.  */
         }
       else
         {
@@ -691,7 +709,11 @@ Convert JSON data into rec data.\n"), stdout);
   fputs (_("\
   -t, --type=TYPE                     type name for the converted records; if this\n\
                                         parameter is omitted then the type is inferred\n\
-                                        from the JSON structure.\n"),
+                                        from the JSON structure.\n\
+      --null=MODE                     how to handle JSON null values: 'keep'\n\
+                                        (default) emits the field with an empty value,\n\
+                                        'omit' drops the field, 'string' emits the\n\
+                                        literal value 'null'.\n"),
          stdout);
 
   recutl_print_help_common ();
@@ -718,6 +740,17 @@ json2rec_parse_args (int argc, char **argv)
         case RECORD_TYPE_ARG:
         case 't':
           json2rec_record_type = xstrdup (optarg);
+          break;
+        case NULL_ARG:
+          if (strcmp (optarg, "keep") == 0)
+            json2rec_null_mode = NULL_KEEP;
+          else if (strcmp (optarg, "omit") == 0)
+            json2rec_null_mode = NULL_OMIT;
+          else if (strcmp (optarg, "string") == 0)
+            json2rec_null_mode = NULL_STRING;
+          else
+            recutl_fatal (_("invalid --null mode '%s' (use keep|omit|string)\n"),
+                          optarg);
           break;
         default:
           exit (EXIT_FAILURE);
