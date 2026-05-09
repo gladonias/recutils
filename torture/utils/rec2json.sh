@@ -133,7 +133,7 @@ test_tool rec2json-sort ok \
           rec2json \
           '-S Priority' \
           sort \
-'[{"Name": "Alpha", "Priority": "1"}, {"Name": "Beta", "Priority": "2"}]
+'{"Item": [{"Name": "Alpha", "Priority": "1"}, {"Name": "Beta", "Priority": "2"}]}
 '
 
 #

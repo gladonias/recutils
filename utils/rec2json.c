@@ -295,14 +295,19 @@ rec2json_process_data (rec_db_t db)
   bool multi = false;
   bool first = true;
 
-  if (!rec2json_record_type && rec_db_size (db) > 1)
+  /* Emit the wrapping {"type": [...], ...} object whenever any visible
+     rset has a type — otherwise type information is lost on conversion
+     and rec2json | json2rec cannot round-trip.  When the user asked for
+     a single type with -t, emit a bare array so the output stays
+     directly consumable.  */
+  if (!rec2json_record_type)
     {
-      size_t typed_count = 0;
       for (i = 0; i < rec_db_size (db); i++)
         if (rec_rset_type (rec_db_get_rset (db, i)))
-          typed_count++;
-      multi = (typed_count > 1)
-        || (typed_count == 1 && rec_db_size (db) > 1);
+          {
+            multi = true;
+            break;
+          }
     }
 
   if (rec_db_size (db) == 0)
