@@ -253,6 +253,7 @@ recutl_parse_db_from_file (FILE *in,
               rec_rset_t anon_rset = rec_db_get_rset_by_type (db, NULL);
               rec_mset_iterator_t iter = rec_mset_iterator (rec_rset_mset (rset));
               rec_mset_elem_t elem;
+              bool merge_ok = true;
               while (rec_mset_iterator_next (&iter, MSET_ANY, NULL, &elem))
                 {
                   void *data = rec_mset_elem_dup_data (elem);
@@ -261,10 +262,19 @@ recutl_parse_db_from_file (FILE *in,
                                            rec_mset_elem_type (elem),
                                            data,
                                            MSET_ANY))
-                    return false;
+                    {
+                      merge_ok = false;
+                      break;
+                    }
                 }
               rec_mset_iterator_free (&iter);
-              return true;
+              rec_rset_destroy (rset);
+              if (!merge_ok)
+                {
+                  res = false;
+                  break;
+                }
+              continue;
             }
         }
 
