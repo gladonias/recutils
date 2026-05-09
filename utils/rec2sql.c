@@ -36,6 +36,7 @@ char *rec2sql_record_type = NULL;
 rec_fex_t rec2sql_sort_by_fields = NULL;
 char *rec2sql_table_name = NULL;
 bool rec2sql_create_table = false;
+const char *rec2sql_multi_separator = "\n";
 
 /*
  * Command line options management
@@ -47,7 +48,8 @@ enum
     RECORD_TYPE_ARG,
     SORT_ARG,
     TABLE_NAME_ARG,
-    CREATE_TABLE_ARG
+    CREATE_TABLE_ARG,
+    SEPARATOR_ARG
   };
 
 static const struct option GNU_longOptions[] =
@@ -57,6 +59,7 @@ static const struct option GNU_longOptions[] =
     {"sort", required_argument, NULL, SORT_ARG},
     {"table", required_argument, NULL, TABLE_NAME_ARG},
     {"create-table", no_argument, NULL, CREATE_TABLE_ARG},
+    {"separator", required_argument, NULL, SEPARATOR_ARG},
     {NULL, 0, NULL, 0}
   };
 
@@ -80,7 +83,9 @@ Convert rec data into SQL INSERT statements.\n"), stdout);
   -T, --table=NAME                    use NAME as the SQL table name instead of\n\
                                         the record type\n\
   -S, --sort=FIELDS                   sort the output by the specified fields.\n\
-  -c, --create-table                  emit CREATE TABLE statements before INSERTs.\n"),
+  -c, --create-table                  emit CREATE TABLE statements before INSERTs.\n\
+      --separator=STR                 string used to join multi-valued fields in SQL\n\
+                                        values (default is a newline character).\n"),
          stdout);
 
   recutl_print_help_common ();
@@ -129,6 +134,9 @@ rec2sql_parse_args (int argc, char **argv)
         case CREATE_TABLE_ARG:
         case 'c':
           rec2sql_create_table = true;
+          break;
+        case SEPARATOR_ARG:
+          rec2sql_multi_separator = optarg;
           break;
         default:
           exit (EXIT_FAILURE);
@@ -235,7 +243,15 @@ rec2sql_generate_record (rec_record_t record, const char *table)
               const char *p;
 
               if (i > 0)
-                putchar ('\n');
+                {
+                  for (p = rec2sql_multi_separator; *p; p++)
+                    {
+                      if (*p == '\'')
+                        fputs ("''", stdout);
+                      else
+                        putchar (*p);
+                    }
+                }
               for (p = val; *p; p++)
                 {
                   if (*p == '\'')
