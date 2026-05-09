@@ -204,8 +204,8 @@ field_cb (void *s, size_t len, void *data)
           ctx->field_names = tmp;
         }
 
-      /* Normalize the name: spaces and tabs are turned into dashes
-         '_'.  */
+      /* Normalize the name: spaces and tabs are turned into
+         underscores '_'.  */
       for (i = 0; i < strlen (str); i++)
         {
           if ((str[i] == ' ') || (str[i] == '\t'))
@@ -224,7 +224,16 @@ field_cb (void *s, size_t len, void *data)
       /* Create a new field and insert it in the current record.  */
 
       if (ctx->num_fields >= ctx->num_field_names)
-        recutl_fatal (_("error while parsing CSV file: too many columns in row\n"));
+        {
+          if (csv2rec_strict)
+            recutl_fatal (_("error while parsing CSV file: too many columns in row %zu\n"),
+                          ctx->lineno);
+          recutl_warning (_("ignoring extra column at row %zu (header has %zu columns)\n"),
+                          ctx->lineno, ctx->num_field_names);
+          free (str);
+          ctx->num_fields++;
+          return;
+        }
 
       if (!ctx->record)
         {
@@ -251,8 +260,6 @@ record_cb (int c, void *data)
   struct csv2rec_ctx *ctx;
   ctx = (struct csv2rec_ctx *) data;
 
-  ctx->lineno++;
-
   if (ctx->header_p)
     ctx->header_p = false;
   else
@@ -278,15 +285,34 @@ record_cb (int c, void *data)
           rec_db_insert_rset (ctx->db, ctx->rset, rec_db_size (ctx->db));
         }
 
+      /* Warn (or fail in strict mode) when the row has fewer columns
+         than the header — it produces a record with missing fields,
+         which is rarely intentional.  */
+      if (ctx->num_fields < ctx->num_field_names && ctx->record)
+        {
+          if (csv2rec_strict)
+            recutl_fatal (_("error while parsing CSV file: too few columns in row %zu (expected %zu, got %zu)\n"),
+                          ctx->lineno, ctx->num_field_names,
+                          ctx->num_fields);
+          recutl_warning (_("row %zu has %zu columns; header has %zu\n"),
+                          ctx->lineno, ctx->num_fields,
+                          ctx->num_field_names);
+        }
+
       /* Add the current record to the record set.  */
-      rec_mset_append (rec_rset_mset (ctx->rset),
-                       MSET_RECORD,
-                       (void *) ctx->record, MSET_ANY);
-      ctx->record = NULL;
+      if (ctx->record)
+        {
+          rec_mset_append (rec_rset_mset (ctx->rset),
+                           MSET_RECORD,
+                           (void *) ctx->record, MSET_ANY);
+          ctx->record = NULL;
+        }
 
       /* Reset the field counter.  */
       ctx->num_fields = 0;
     }
+
+  ctx->lineno++;
 }
 
 static rec_db_t
@@ -307,7 +333,7 @@ process_csv (void)
   ctx.field_names = NULL;
   ctx.num_field_names = 0;
   ctx.num_fields = 0;
-  ctx.lineno = 0;
+  ctx.lineno = 1;
 
   /* Set the files to read/write from/to.
 
