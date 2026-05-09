@@ -798,6 +798,17 @@ json2rec_process_input (void)
                     line, col);
     }
 
+  json_skip_ws ();
+  if (*jp != '\0')
+    {
+      size_t line, col;
+      json_get_position (&line, &col);
+      json_value_free (&root);
+      free (input);
+      recutl_fatal (_("unexpected trailing data after JSON value at line %zu, column %zu\n"),
+                    line, col);
+    }
+
   db = rec_db_new ();
   if (!db)
     recutl_out_of_memory ();
