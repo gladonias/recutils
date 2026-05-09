@@ -282,6 +282,30 @@ rec2sql_generate_rset (rec_rset_t rset, const char *table)
   rec_mset_iterator_free (&iter);
 }
 
+static const char *
+rec2sql_sql_type_for (rec_rset_t rset, const char *field_name)
+{
+  rec_type_t type = rec_rset_get_field_type (rset, field_name);
+  if (!type)
+    return "TEXT";
+
+  switch (rec_type_kind (type))
+    {
+    case REC_TYPE_INT:
+    case REC_TYPE_RANGE:
+    case REC_TYPE_SIZE:
+      return "INTEGER";
+    case REC_TYPE_REAL:
+      return "REAL";
+    case REC_TYPE_BOOL:
+      return "BOOLEAN";
+    case REC_TYPE_DATE:
+      return "TIMESTAMP";
+    default:
+      return "TEXT";
+    }
+}
+
 static void
 rec2sql_generate_create_table (rec_rset_t rset, const char *table)
 {
@@ -322,12 +346,14 @@ rec2sql_generate_create_table (rec_rset_t rset, const char *table)
   for (i = 0; i < rec_fex_size (columns); i++)
     {
       rec_fex_elem_t elem = rec_fex_get (columns, i);
+      const char *name = rec_fex_elem_field_name (elem);
 
       if (i > 0)
         fputs (",\n", stdout);
       fputs ("  ", stdout);
-      rec2sql_write_identifier (rec_fex_elem_field_name (elem));
-      fputs (" TEXT", stdout);
+      rec2sql_write_identifier (name);
+      putchar (' ');
+      fputs (rec2sql_sql_type_for (rset, name), stdout);
     }
 
   fputs ("\n);\n\n", stdout);
