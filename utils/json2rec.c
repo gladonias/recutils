@@ -76,7 +76,10 @@ struct json_value
   union
   {
     char *string;
-    double number;
+    /* Numbers are kept as their original textual representation so we
+       round-trip exactly (preserves precision for integers above 2^53,
+       trailing zeros, exponent form, etc.).  */
+    char *number;
     bool boolean;
     struct
     {
@@ -469,16 +472,55 @@ json_parse_value (struct json_value *out)
       return true;
     }
 
-  /* Number.  */
+  /* Number — capture the textual span verbatim so we preserve the
+     exact representation the input used.  Grammar (RFC 8259):
+
+       number = [ '-' ] int [ frac ] [ exp ]
+       int    = '0' | [1-9] [0-9]*
+       frac   = '.' [0-9]+
+       exp    = ('e'|'E') [+-]? [0-9]+  */
   if (*jp == '-' || (*jp >= '0' && *jp <= '9'))
     {
-      char *end;
-      double num = strtod (jp, &end);
-      if (end == jp)
+      const char *start = jp;
+
+      if (*jp == '-')
+        jp++;
+
+      if (*jp == '0')
+        jp++;
+      else if (*jp >= '1' && *jp <= '9')
+        while (*jp >= '0' && *jp <= '9')
+          jp++;
+      else
         return false;
-      jp = end;
+
+      if (*jp == '.')
+        {
+          jp++;
+          if (!(*jp >= '0' && *jp <= '9'))
+            return false;
+          while (*jp >= '0' && *jp <= '9')
+            jp++;
+        }
+
+      if (*jp == 'e' || *jp == 'E')
+        {
+          jp++;
+          if (*jp == '+' || *jp == '-')
+            jp++;
+          if (!(*jp >= '0' && *jp <= '9'))
+            return false;
+          while (*jp >= '0' && *jp <= '9')
+            jp++;
+        }
+
+      size_t len = jp - start;
+      char *buf = xmalloc (len + 1);
+      memcpy (buf, start, len);
+      buf[len] = '\0';
+
       out->type = JSON_NUMBER;
-      out->u.number = num;
+      out->u.number = buf;
       return true;
     }
 
@@ -494,6 +536,9 @@ json_value_free (struct json_value *v)
     {
     case JSON_STRING:
       free (v->u.string);
+      break;
+    case JSON_NUMBER:
+      free (v->u.number);
       break;
     case JSON_OBJECT:
       for (i = 0; i < v->u.object.count; i++)
@@ -525,15 +570,7 @@ json_value_to_string (struct json_value *v)
     case JSON_STRING:
       return xstrdup (v->u.string);
     case JSON_NUMBER:
-      {
-        char buf[64];
-        long l = (long) v->u.number;
-        if ((double) l == v->u.number)
-          snprintf (buf, sizeof buf, "%ld", l);
-        else
-          snprintf (buf, sizeof buf, "%g", v->u.number);
-        return xstrdup (buf);
-      }
+      return xstrdup (v->u.number);
     case JSON_BOOL:
       return xstrdup (v->u.boolean ? "true" : "false");
     case JSON_NULL:
